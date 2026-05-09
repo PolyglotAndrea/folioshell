@@ -15,8 +15,8 @@
     gridSpacing    : 50,
     gridOpacity    : 0.06,
     lineOpacity    : 0.15,
-    mouseRadius    : 180,
-    mouseAttract   : 0.015,  // mouse attraction strength
+    mouseRadius    : 200,
+    mouseRepel     : 0.025,  // mouse repel strength (push away)
   };
 
   let W, H, particles, mouse = { x: -999, y: -999 };
@@ -65,12 +65,12 @@
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
 
-      // mouse attraction (follow)
-      const dx = mouse.x - p.x;
-      const dy = mouse.y - p.y;
+      // mouse repel (push away)
+      const dx = p.x - mouse.x;
+      const dy = p.y - mouse.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < CFG.mouseRadius && dist > 1) {
-        const force = (CFG.mouseRadius - dist) / CFG.mouseRadius * CFG.mouseAttract;
+        const force = (CFG.mouseRadius - dist) / CFG.mouseRadius * CFG.mouseRepel;
         p.vx += (dx / dist) * force;
         p.vy += (dy / dist) * force;
       }

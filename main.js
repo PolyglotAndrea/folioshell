@@ -227,16 +227,15 @@ COMMANDS.clear = function() {
 };
 
 COMMANDS.banner = function() {
-  const ascii = [
-    '  ___  ___  _     _  ___  ___  _  _  ___  _     _     ',
-    ' | __|| o \\ | |   | ||   || __|| || || __|| |   | |    ',
-    ' | _| | _/ | |_  | || o  || _| | \\/ | _| | |_  | |_  ',
-    ' |_|  |_|  |___| |_||___/ |___||_||_||___||___| |___| ',
-  ];
   blank();
-  ascii.forEach(row => line(`<span class="ascii">${esc(row)}</span>`));
-  blank();
-  line(`<span class="c-purple bold">${esc(CONFIG.name)}</span>  <span class="c-dim">${esc(CONFIG.title)}</span>`);
+  line(`<span class="banner-box">╔═══════════════════════════════════════════════════════╗</span>`);
+  line(`<span class="banner-box">║                                                       ║</span>`);
+  line(`<span class="banner-box">║     <span class="c-purple bold">F O L I O S H E L L</span>                            ║</span>`);
+  line(`<span class="banner-box">║                                                       ║</span>`);
+  line(`<span class="banner-box">║     <span class="c-cyan">${esc(CONFIG.name)}</span>                                ║</span>`);
+  line(`<span class="banner-box">║     <span class="c-dim">${esc(CONFIG.title).padEnd(45, ' ')}</span>║</span>`);
+  line(`<span class="banner-box">║                                                       ║</span>`);
+  line(`<span class="banner-box">╚═══════════════════════════════════════════════════════╝</span>`);
   blank();
 };
 
@@ -342,19 +341,24 @@ document.addEventListener('click', () => inputEl.focus());
 
 // ── Cursor positioning ────────────────────────────────────────────────────
 const cursorEl = document.getElementById('cursor-block');
+const ps1El = document.querySelector('.ps1');
+
 function updateCursor() {
-  const ps1Width = document.querySelector('.ps1').offsetWidth;
-  const inputRect = inputEl.getBoundingClientRect();
-  const textWidth = getTextWidth(inputEl.value, '13px JetBrains Mono, monospace');
-  cursorEl.style.left = `${ps1Width + textWidth + 7}px`;
+  // measure prompt width + input text width
+  const ps1Width = ps1El.offsetWidth;
+  const textWidth = getTextWidth(inputEl.value, getComputedStyle(inputEl).font);
+  cursorEl.style.left = `${ps1Width + textWidth + 2}px`;
 }
+
 function getTextWidth(text, font) {
   const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement('canvas'));
   const ctx = canvas.getContext('2d');
   ctx.font = font;
   return ctx.measureText(text).width;
 }
+
 inputEl.addEventListener('input', updateCursor);
+inputEl.addEventListener('keydown', () => setTimeout(updateCursor, 0));
 updateCursor();
 
 // ── Boot ───────────────────────────────────────────────────────────────────
