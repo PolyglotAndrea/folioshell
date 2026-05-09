@@ -75,12 +75,9 @@ let cachedRepos = null;
 async function fetchGitHubRepos() {
   if (cachedRepos) return cachedRepos;
   try {
-    // Fetch all public repos
     const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=100`);
     if (!res.ok) throw new Error('GitHub API error');
     const repos = await res.json();
-    
-    // Improved sorting: non-forks first, then stars + forks, then updated date
     const processed = repos
       .sort((a, b) => {
         if (a.fork !== b.fork) return a.fork ? 1 : -1;
@@ -99,7 +96,6 @@ async function fetchGitHubRepos() {
         forks: r.forks_count,
         updated: new Date(r.updated_at).getFullYear().toString(),
       }));
-    
     cachedRepos = processed;
     return cachedRepos;
   } catch (err) {
@@ -278,7 +274,6 @@ COMMANDS.projects = async function() {
     const starCount = stars || 0;
     const updateTime = updated || '2024';
     const forkCount = forks ? `  •  🍴 ${forks}` : '';
-    // Make the entire card clickable
     const html =
       `<div class="project-card" onclick="window.open('${url}', '_blank')" style="cursor:pointer;">` +
         `<div class="project-header">` +
@@ -310,30 +305,45 @@ COMMANDS.clear = function() {
 COMMANDS.banner = async function() {
   blank();
   const ascii = [
-    '  ______      _ _                 _          _ _ ',
-    ' |  ____|    | (_)               | |        | | |',
-    ' | |__ ___   | |_  ___  ___ _ __ | |__   ___| | |',
-    ' |  __/ _ \\  | | |/ _ \\/ __| \'_ \\| \'_ \\ / _ \\ | |',
-    ' | | | (_) | | | | (_) \\__ \\ | | | | | |  __/ | |',
-    ' |_|  \\___/  |_|_|\\___/|___/_| |_|_| |_|\\___|_|_|'
+    '   ______ ____  ______ _   _ _____ _  __',
+    '  / ____/ __ \\| ____| \\ | |_   _\\ \\/ /',
+    ' | |   | |  | | |__ |  \\| | | |  \\  / ',
+    ' | |   | |  | |  __|| . ` | | |  /  \\ ',
+    ' | |___| |__| | |___| |\\  |_| |_/  /\\ \\',
+    '  \\_____\\____/|_____|_| \\_|_____/_/  \\_\\',
+    '        COGNITIVE INTERFACE v2.0'
   ];
   for (const l of ascii) {
-    line(`<span class="c-purple" style="font-weight:bold; font-size:0.85em; opacity:0.9;">${esc(l)}</span>`);
+    line(`<span class="c-purple" style="font-weight:bold; font-size:1.1em; letter-spacing: 1px;">${esc(l)}</span>`);
     await new Promise(r => setTimeout(r, 10));
   }
   blank();
+  
+  // Simulated boot sequence
+  const bootLines = [
+    { l: '▸ Initializing cognitive kernels...', c: 'c-dim' },
+    { l: '▸ Loading neural orchestration modules...', c: 'c-dim' },
+    { l: '▸ Connecting to high-performance data planes...', c: 'c-dim' },
+    { l: '▸ SUCCESS: Cognix OS interface ready.', c: 'c-green' }
+  ];
+  
+  for (const bl of bootLines) {
+    line(`<span class="${bl.c}">${bl.l}</span>`);
+    await new Promise(r => setTimeout(r, 80));
+  }
+  
+  blank();
   const sysInfo = [
-    { label: 'OS', val: 'CognixOS v2.0 (Custom AUI Kernel)' },
-    { label: 'Uptime', val: '12 years, 4 months (High Availability)' },
-    { label: 'Shell', val: 'zsh / folioshell (AI-Optimized)' },
-    { label: 'Architect', val: 'B. Andrea Horvath' },
-    { label: 'Location', val: 'Decentralized / United States' }
+    { label: 'KERNEL', val: 'Linux 6.8.0-cognix-ai-x86_64' },
+    { label: 'UPTIME', val: '12 years, 4 months' },
+    { label: 'SHELL',  val: 'folioshell v2.0' },
+    { label: 'USER',   val: 'andrea@cognix.one' }
   ];
   sysInfo.forEach(info => {
-    line(`<span class="c-blue bold">${info.label.padEnd(12)}</span> <span class="c-dim">▸</span> <span class="c-dim">${info.val}</span>`);
+    line(`<span class="c-blue bold">${info.label.padEnd(10)}</span> <span class="c-dim">▸</span> <span class="c-cyan">${info.val}</span>`);
   });
   blank();
-  line(`<span class="c-dim">Type </span><span class="c-green bold">help</span><span class="c-dim"> to explore the cognitive infrastructure.</span>`);
+  line(`<span class="c-dim">Type </span><span class="c-green bold">help</span><span class="c-dim"> to explore your cognitive workspace.</span>`);
   blank();
 };
 
