@@ -81,7 +81,6 @@ async function fetchGitHubRepos() {
     
     const repos = await res.json();
     
-    // Custom sort: (stars * 2) + forks, then filter out forks if they are not significant
     const processed = repos
       .filter(r => !r.fork || r.stargazers_count > 10)
       .sort((a, b) => {
@@ -104,7 +103,7 @@ async function fetchGitHubRepos() {
     return cachedRepos;
   } catch (err) {
     console.error('Failed to fetch GitHub repos:', err);
-    return CONFIG.projects; // fallback to static config
+    return CONFIG.projects;
   }
 }
 
@@ -137,7 +136,6 @@ const line  = (html, cls = '') => {
 
 function scrollBottom() {
   const t = document.getElementById('terminal');
-  // Use requestAnimationFrame to ensure DOM is updated
   requestAnimationFrame(() => {
     t.scrollTop = t.scrollHeight;
   });
@@ -262,7 +260,6 @@ COMMANDS.projects = async function() {
   
   const repos = await fetchGitHubRepos();
   
-  // clear "fetching" message
   const lines = outputEl.querySelectorAll('.line');
   if (lines.length >= 2) {
     lines[lines.length - 2].remove();
@@ -339,20 +336,27 @@ let histIdx = -1;
 
 inputEl.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
-    const raw = inputEl.value.trim();
+    e.preventDefault(); // 阻止默认行为，防止竞态条件
+    
+    const raw = inputEl.value;
+    const trimmed = raw.trim();
+    
+    // 立即清空输入框并重置光标
     inputEl.value = '';
     histIdx = -1;
     updateCursor();
 
+    // 打印回显
     line(promptHTML(raw));
 
-    if (!raw) { scrollBottom(); return; }
+    if (!trimmed) { scrollBottom(); return; }
     history.unshift(raw);
 
-    const lower    = raw.toLowerCase();
+    const lower    = trimmed.toLowerCase();
     const baseCmd  = lower.split(' ')[0];
-    const args     = raw.slice(baseCmd.length).trim();
+    const args     = trimmed.slice(baseCmd.length).trim();
 
+    // 执行命令
     if (COMMANDS[lower]) {
       await COMMANDS[lower]();
     } else if (baseCmd === 'echo') {
@@ -371,8 +375,10 @@ inputEl.addEventListener('keydown', async e => {
     } else if (baseCmd === 'clear') {
       COMMANDS.clear();
     } else {
-      line(`<span class="c-red">command not found: ${esc(raw)}</span>`);
+      line(`<span class="c-red">command not found: ${esc(trimmed)}</span>`);
     }
+    
+    // 确保执行完异步命令后再次滚动到底部
     scrollBottom();
   }
 
@@ -399,7 +405,7 @@ inputEl.addEventListener('keydown', async e => {
   }
 });
 
-// ── Cursor Positioning — Simplified ────────────────────────────────────────
+// ── Cursor Positioning ─────────────────────────────────────────────────────
 function updateCursor() {
   const val = inputEl.value;
   const temp = document.createElement('span');
