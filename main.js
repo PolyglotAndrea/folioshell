@@ -78,9 +78,7 @@ async function fetchGitHubRepos() {
   try {
     const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=30`);
     if (!res.ok) throw new Error('GitHub API error');
-    
     const repos = await res.json();
-    
     const processed = repos
       .filter(r => !r.fork || r.stargazers_count > 10)
       .sort((a, b) => {
@@ -98,7 +96,6 @@ async function fetchGitHubRepos() {
         forks: r.forks_count,
         updated: new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       }));
-      
     cachedRepos = processed;
     return cachedRepos;
   } catch (err) {
@@ -147,7 +144,6 @@ async function typeLine(html, cls = '', speed = 2) {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
   const text = tempDiv.innerText;
-  
   if (html.includes('<')) {
     l.innerHTML = html;
   } else {
@@ -160,7 +156,7 @@ async function typeLine(html, cls = '', speed = 2) {
   scrollBottom();
 }
 
-// ── Prompt HTML (for echoing typed commands) ───────────────────────────────
+// ── Prompt HTML ────────────────────────────────────────────────────────────
 function promptHTML(cmd) {
   return `<span class="ps1-echo">` +
     `<span class="e-user">${CONFIG.user}</span>` +
@@ -181,7 +177,7 @@ COMMANDS.help = async function() {
   blank();
   const rows = [
     ['me',          'full profile & executive summary'],
-    ['whoami',      'one-liner intro & skills'],
+    ['whoami',      'detailed technical deep-dive'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
     ['projects',    'key projects (dynamic)'],
@@ -209,19 +205,33 @@ COMMANDS.me = async function() {
     else line(esc(l));
   }
   blank();
-  line(`<span class="tag tag-peach">Flagship</span> <span class="c-cyan">cognix.one</span> <span class="c-dim">— The Cognitive OS</span>`);
-  line(`<span class="c-dim" style="font-size:0.9em; margin-left: 20px;">Multi-Tenant SaaS · Hybrid LLM + Vector Search · Go/Rust data plane</span>`);
-  blank();
 };
 
-COMMANDS.whoami = function() {
+COMMANDS.whoami = async function() {
   blank();
-  line(`<span class="c-purple bold">B. Andrea Horvath</span> <span class="c-dim">—</span> Senior AI Full-Stack Architect`);
-  line(`<span class="c-dim">Founder of </span><span class="c-cyan">Cognix.one</span> <span class="c-dim">· United States</span>`);
+  await typeLine(`<span class="section-head">// executive summary</span>`);
+  line(`<span class="c-purple bold">B. Andrea Horvath</span> <span class="c-dim">— Founder of </span><span class="c-cyan">Cognix.one</span>`);
+  line(`<span class="c-dim">A polyglot engineer with </span><span class="c-green bold">12+ years</span><span class="c-dim"> of experience in high-performance distributed systems.</span>`);
   blank();
-  line(`<span class="c-green">Experience:</span> <span class="c-dim">12+ years in Java, Go, Rust, and Distributed Systems.</span>`);
-  line(`<span class="c-green">Expertise:</span> <span class="c-dim">Neural Orchestration, Multi-Agent Systems, Cloud-Native Infra.</span>`);
-  line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Summarized from GitHub/PolyglotAndrea)</span>`);
+  
+  await typeLine(`<span class="section-head">// strategic focus</span>`);
+  line(`<span class="c-purple">▸ </span><span class="bold">AI Agent Orchestration:</span> <span class="c-dim">Expert in Multi-Agent Systems (MAS) & neural infrastructure.</span>`);
+  line(`<span class="c-blue">▸ </span><span class="bold">Cognitive Systems:</span> <span class="c-dim">Bridging high-performance data planes (Go/Rust) with AI agency.</span>`);
+  line(`<span class="c-peach">▸ </span><span class="bold">SaaS Engineering:</span> <span class="c-dim">Deep expertise in multi-tenancy, secure supply chain & cloud-native infra.</span>`);
+  blank();
+
+  await typeLine(`<span class="section-head">// core primitives</span>`);
+  const stack = [
+    { label: 'Performance', val: 'Rust, Go, C++, Linux Internals' },
+    { label: 'Enterprise',  val: 'Java (Spring), Distributed DBs' },
+    { label: 'AI/Neural',   val: 'LangChainGo, RAG, Neural Orchestration' }
+  ];
+  stack.forEach(s => {
+    line(`<span class="c-green bold">${s.label.padEnd(14)}</span> <span class="c-dim">${s.val}</span>`);
+  });
+  blank();
+
+  line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Information distilled from https://github.com/PolyglotAndrea)</span>`);
   blank();
 };
 
@@ -257,20 +267,16 @@ COMMANDS.projects = async function() {
   line(`<span class="section-head">// projects</span>`);
   line(`<span class="c-dim">  fetching & sorting repositories...</span>`);
   blank();
-  
   const repos = await fetchGitHubRepos();
-  
   const lines = outputEl.querySelectorAll('.line');
   if (lines.length >= 2) {
     lines[lines.length - 2].remove();
     outputEl.querySelectorAll('br')[outputEl.querySelectorAll('br').length - 2]?.remove();
   }
-  
   repos.forEach(({ name, desc, lang, url, stars, updated, forks }) => {
     const starCount = stars !== undefined ? stars : 0;
     const updateTime = updated || 'Recent';
     const forkCount = forks !== undefined ? `  •  🍴 ${forks}` : '';
-    
     const html =
       `<div class="project-card">` +
         `<div class="project-header">` +
@@ -336,27 +342,18 @@ let histIdx = -1;
 
 inputEl.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
-    e.preventDefault(); // 阻止默认行为，防止竞态条件
-    
+    e.preventDefault();
     const raw = inputEl.value;
     const trimmed = raw.trim();
-    
-    // 立即清空输入框并重置光标
     inputEl.value = '';
     histIdx = -1;
     updateCursor();
-
-    // 打印回显
     line(promptHTML(raw));
-
     if (!trimmed) { scrollBottom(); return; }
     history.unshift(raw);
-
     const lower    = trimmed.toLowerCase();
     const baseCmd  = lower.split(' ')[0];
     const args     = trimmed.slice(baseCmd.length).trim();
-
-    // 执行命令
     if (COMMANDS[lower]) {
       await COMMANDS[lower]();
     } else if (baseCmd === 'echo') {
@@ -377,11 +374,8 @@ inputEl.addEventListener('keydown', async e => {
     } else {
       line(`<span class="c-red">command not found: ${esc(trimmed)}</span>`);
     }
-    
-    // 确保执行完异步命令后再次滚动到底部
     scrollBottom();
   }
-
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     if (histIdx < history.length - 1) inputEl.value = history[++histIdx];
@@ -393,7 +387,6 @@ inputEl.addEventListener('keydown', async e => {
     else { histIdx = -1; inputEl.value = ''; }
     updateCursor();
   }
-  
   if (e.key === 'Tab') {
     e.preventDefault();
     const partial = inputEl.value.toLowerCase();
@@ -424,7 +417,6 @@ inputEl.addEventListener('input', updateCursor);
 window.addEventListener('resize', updateCursor);
 document.addEventListener('click', () => inputEl.focus());
 
-// ── Boot ───────────────────────────────────────────────────────────────────
 async function boot() {
   await COMMANDS.banner();
   line(`  Welcome to <span class="c-purple bold">Folioshell v2.0</span>.`);
