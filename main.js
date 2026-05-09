@@ -74,7 +74,6 @@ let cachedRepos = null;
 
 async function fetchGitHubRepos() {
   if (cachedRepos) return cachedRepos;
-  
   try {
     const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=30`);
     if (!res.ok) throw new Error('GitHub API error');
@@ -213,13 +212,11 @@ COMMANDS.whoami = async function() {
   line(`<span class="c-purple bold">B. Andrea Horvath</span> <span class="c-dim">— Founder of </span><span class="c-cyan">Cognix.one</span>`);
   line(`<span class="c-dim">A polyglot engineer with </span><span class="c-green bold">12+ years</span><span class="c-dim"> of experience in high-performance distributed systems.</span>`);
   blank();
-  
   await typeLine(`<span class="section-head">// strategic focus</span>`);
   line(`<span class="c-purple">▸ </span><span class="bold">AI Agent Orchestration:</span> <span class="c-dim">Expert in Multi-Agent Systems (MAS) & neural infrastructure.</span>`);
   line(`<span class="c-blue">▸ </span><span class="bold">Cognitive Systems:</span> <span class="c-dim">Bridging high-performance data planes (Go/Rust) with AI agency.</span>`);
   line(`<span class="c-peach">▸ </span><span class="bold">SaaS Engineering:</span> <span class="c-dim">Deep expertise in multi-tenancy, secure supply chain & cloud-native infra.</span>`);
   blank();
-
   await typeLine(`<span class="section-head">// core primitives</span>`);
   const stack = [
     { label: 'Performance', val: 'Rust, Go, C++, Linux Internals' },
@@ -230,7 +227,6 @@ COMMANDS.whoami = async function() {
     line(`<span class="c-green bold">${s.label.padEnd(14)}</span> <span class="c-dim">${s.val}</span>`);
   });
   blank();
-
   line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Information distilled from https://github.com/PolyglotAndrea)</span>`);
   blank();
 };
@@ -306,22 +302,37 @@ COMMANDS.clear = function() {
 };
 
 COMMANDS.banner = async function() {
-  const banner = [
-    '╔════════════════════════════════════════════╗',
-    '║                                            ║',
-    '║        F O L I O S H E L L v2.0            ║',
-    '║                                            ║',
-    '╠════════════════════════════════════════════╣',
-    '║                                            ║',
-    '║  B. Andrea Horvath                         ║',
-    '║  Senior AI Full-Stack Architect            ║',
-    '║                                            ║',
-    '╚════════════════════════════════════════════╝'
+  blank();
+  const ascii = [
+    '  ______      _ _                 _          _ _ ',
+    ' |  ____|    | (_)               | |        | | |',
+    ' | |__ ___   | |_  ___  ___ _ __ | |__   ___| | |',
+    ' |  __/ _ \\  | | |/ _ \\/ __| \'_ \\| \'_ \\ / _ \\ | |',
+    ' | | | (_) | | | | (_) \\__ \\ | | | | | |  __/ | |',
+    ' |_|  \\___/  |_|_|\\___/|___/_| |_|_| |_|\\___|_|_|'
   ];
-  for (const l of banner) {
-    line(`<span class="c-purple" style="opacity:0.8; font-size:0.9em;">${esc(l)}</span>`);
+  
+  for (const l of ascii) {
+    line(`<span class="c-purple" style="font-weight:bold; font-size:0.85em; opacity:0.9;">${esc(l)}</span>`);
     await new Promise(r => setTimeout(r, 10));
   }
+  
+  blank();
+  
+  const sysInfo = [
+    { label: 'OS', val: 'CognixOS v2.0 (Custom AUI Kernel)' },
+    { label: 'Uptime', val: '12 years, 4 months (High Availability)' },
+    { label: 'Shell', val: 'zsh / folioshell (AI-Optimized)' },
+    { label: 'Architect', val: 'B. Andrea Horvath' },
+    { label: 'Location', val: 'Decentralized / United States' }
+  ];
+  
+  sysInfo.forEach(info => {
+    line(`<span class="c-blue bold">${info.label.padEnd(12)}</span> <span class="c-dim">▸</span> <span class="c-dim">${info.val}</span>`);
+  });
+  
+  blank();
+  line(`<span class="c-dim">Type </span><span class="c-green bold">help</span><span class="c-dim"> to explore the cognitive infrastructure.</span>`);
   blank();
 };
 
@@ -419,9 +430,6 @@ document.addEventListener('click', () => inputEl.focus());
 
 async function boot() {
   await COMMANDS.banner();
-  line(`  Welcome to <span class="c-purple bold">Folioshell v2.0</span>.`);
-  line(`  Type <span class="c-green">help</span> to explore.`);
-  blank();
   updateCursor();
 }
 
