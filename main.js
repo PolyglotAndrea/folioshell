@@ -63,6 +63,33 @@ const CONFIG = {
   ],
 };
 
+// ── GitHub API integration ────────────────────────────────────────────────
+const GITHUB_USER = 'PolyglotAndrea';
+let cachedRepos = null;
+
+async function fetchGitHubRepos() {
+  if (cachedRepos) return cachedRepos;
+  
+  try {
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=4`);
+    if (!res.ok) throw new Error('GitHub API error');
+    
+    const repos = await res.json();
+    cachedRepos = repos.map(r => ({
+      name: r.name,
+      desc: r.description || 'No description available',
+      lang: r.language || 'Unknown',
+      url:  r.html_url,
+      stars: r.stargazers_count,
+      updated: new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    }));
+    return cachedRepos;
+  } catch (err) {
+    console.error('Failed to fetch GitHub repos:', err);
+    return CONFIG.projects; // fallback to static config
+  }
+}
+
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const outputEl = document.getElementById('output');
 const inputEl  = document.getElementById('cmd-input');
@@ -186,18 +213,31 @@ COMMANDS.skills = function() {
   blank();
 };
 
-COMMANDS.projects = function() {
+COMMANDS.projects = async function() {
   blank();
   line(`<span class="section-head">// projects</span>`);
+  line(`<span class="c-dim">  fetching latest repos from GitHub...</span>`);
   blank();
-  CONFIG.projects.forEach(({ name, desc, lang, url }) => {
+  
+  const repos = await fetchGitHubRepos();
+  
+  // clear "fetching" message
+  const lines = outputEl.querySelectorAll('.line');
+  if (lines.length >= 2) {
+    lines[lines.length - 2].remove(); // remove "fetching..." line
+    outputEl.querySelectorAll('br')[outputEl.querySelectorAll('br').length - 2]?.remove();
+  }
+  
+  repos.forEach(({ name, desc, lang, url, stars, updated }) => {
     const html =
       `<span class="project-card">` +
         `<span class="project-icon">◈</span>` +
         `<span>` +
           `<a class="project-name" href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` +
+          `  <span class="project-meta">⭐ ${stars}  •  ${updated}</span>` +
           `<br>` +
-          `<span class="project-desc">${esc(desc)}</span>  ` +
+          `<span class="project-desc">${esc(desc)}</span>` +
+          `<br>` +
           `<span class="project-lang">[${esc(lang)}]</span>` +
         `</span>` +
       `</span>`;
@@ -228,14 +268,16 @@ COMMANDS.clear = function() {
 
 COMMANDS.banner = function() {
   blank();
-  line(`<span class="banner-box">╔═══════════════════════════════════════════════════════╗</span>`);
-  line(`<span class="banner-box">║                                                       ║</span>`);
-  line(`<span class="banner-box">║     <span class="c-purple bold">F O L I O S H E L L</span>                            ║</span>`);
-  line(`<span class="banner-box">║                                                       ║</span>`);
-  line(`<span class="banner-box">║     <span class="c-cyan">${esc(CONFIG.name)}</span>                                ║</span>`);
-  line(`<span class="banner-box">║     <span class="c-dim">${esc(CONFIG.title).padEnd(45, ' ')}</span>║</span>`);
-  line(`<span class="banner-box">║                                                       ║</span>`);
-  line(`<span class="banner-box">╚═══════════════════════════════════════════════════════╝</span>`);
+  line(`<span class="banner-title">╔════════════════════════════════════════════╗</span>`);
+  line(`<span class="banner-title">║                                            ║</span>`);
+  line(`<span class="banner-title">║        <span class="c-purple bold" style="letter-spacing:0.3em">F O L I O S H E L L</span>        ║</span>`);
+  line(`<span class="banner-title">║                                            ║</span>`);
+  line(`<span class="banner-title">╠════════════════════════════════════════════╣</span>`);
+  line(`<span class="banner-title">║                                            ║</span>`);
+  line(`<span class="banner-title">║  <span class="c-cyan bold">${esc(CONFIG.name)}</span>                       ║</span>`);
+  line(`<span class="banner-title">║  <span class="c-dim">${esc(CONFIG.title).substring(0, 40)}</span>  ║</span>`);
+  line(`<span class="banner-title">║                                            ║</span>`);
+  line(`<span class="banner-title">╚════════════════════════════════════════════╝</span>`);
   blank();
 };
 
@@ -290,28 +332,31 @@ inputEl.addEventListener('keydown', e => {
     const baseCmd  = lower.split(' ')[0];
     const args     = raw.slice(baseCmd.length).trim();
 
-    if (COMMANDS[lower]) {
-      COMMANDS[lower]();
-    } else if (baseCmd === 'echo') {
-      blank();
-      line(esc(args));
-      blank();
-    } else if (baseCmd === 'cat') {
-      const file = args.toLowerCase();
-      if (CAT_MAP[file]) CAT_MAP[file]();
-      else {
+    // execute command (async support)
+    (async () => {
+      if (COMMANDS[lower]) {
+        await COMMANDS[lower]();
+      } else if (baseCmd === 'echo') {
         blank();
-        line(`<span class="error">cat: ${esc(args)}: No such file or directory</span>`);
+        line(esc(args));
+        blank();
+      } else if (baseCmd === 'cat') {
+        const file = args.toLowerCase();
+        if (CAT_MAP[file]) await CAT_MAP[file]();
+        else {
+          blank();
+          line(`<span class="error">cat: ${esc(args)}: No such file or directory</span>`);
+          blank();
+        }
+      } else {
+        blank();
+        line(`<span class="error">command not found: ${esc(raw)}</span>`);
+        line(`<span class="c-dim">输入 <span class="c-green">help</span> 查看可用命令</span>`);
         blank();
       }
-    } else {
-      blank();
-      line(`<span class="error">command not found: ${esc(raw)}</span>`);
-      line(`<span class="c-dim">输入 <span class="c-green">help</span> 查看可用命令</span>`);
-      blank();
-    }
 
-    scrollBottom();
+      scrollBottom();
+    })();
   }
 
   // history ↑ ↓

@@ -408,6 +408,7 @@ html, body {
 .project-icon { color: var(--peach); -webkit-text-fill-color: var(--peach); padding-top: 1px; }
 .project-name { color: var(--blue);  -webkit-text-fill-color: var(--blue);  font-weight: 500; }
 .project-name:hover { text-decoration: underline; cursor: pointer; }
+.project-meta { color: var(--fg-subtle); -webkit-text-fill-color: var(--fg-subtle); font-size: 0.75em; margin-left: 6px; }
 .project-desc { color: var(--fg-dim); -webkit-text-fill-color: var(--fg-dim); font-size: 0.88em; margin-top: 1px; }
 .project-lang { color: var(--green);  -webkit-text-fill-color: var(--green);  font-size: 0.78em; margin-top: 2px; }
 
@@ -438,12 +439,13 @@ html, body {
 }
 
 /* ── Banner box ── */
-.banner-box {
+.banner-title {
   color: var(--purple);
   -webkit-text-fill-color: var(--purple);
-  font-size: 0.88em;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
+  font-size: 0.85em;
+  line-height: 1.5;
+  letter-spacing: 0;
+  display: block;
 }
 
 /* ── Scrollbar ── */
