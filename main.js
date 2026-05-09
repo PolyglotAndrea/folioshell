@@ -7,13 +7,12 @@ const CONFIG = {
   name:  'B. Andrea Horvath',
   title: 'Senior AI Full-Stack Architect · Founder of Cognix.one',
   bio: [
-    'A seasoned architect with 10+ years bridging high-performance systems',
+    'A seasoned architect with 12+ years of expertise in bridging high-performance systems',
     'and modern artificial intelligence.',
     '',
-    'From low-level memory management in Rust to enterprise-grade Java',
-    'ecosystems and cutting-edge AI Agent orchestration — I specialize in',
-    'building "Cognitive Infrastructure" that is scalable, resilient,',
-    'and future-proof.',
+    'Specializing in building "Cognitive Infrastructure" that is scalable and resilient.',
+    'Expert in low-level memory management in Rust, enterprise Java ecosystems,',
+    'and cutting-edge AI Agent orchestration.',
     '',
     '"Code is the infrastructure of thought. In the age of AI, the',
     ' architect\'s job is to ensure that thought has a scalable, safe,',
@@ -21,20 +20,20 @@ const CONFIG = {
   ],
   interests: [
     { icon: '🤖', text: 'AI Agent Orchestration & Multi-Agent Systems' },
-    { icon: '🦀', text: 'Rust & Go — high-performance systems' },
+    { icon: '🦀', text: 'Rust & Go — high-performance distributed systems' },
     { icon: '☁️',  text: 'Cloud-native infra: Kubernetes, Terraform' },
     { icon: '🔒', text: 'Secure Software Supply Chain' },
-    { icon: '🧬', text: 'Distributed Systems & Microservices' },
+    { icon: '🧬', text: 'Distributed Systems Architecture' },
     { icon: '🎨', text: 'AI User Interface (AUI) Design' },
   ],
   skills: [
-    { name: 'AI / ML',       pct: 90, color: '#bb9af7' },
+    { name: 'AI / ML',       pct: 92, color: '#bb9af7' },
     { name: 'Go',            pct: 98, color: '#7dcfff' },
     { name: 'Rust',          pct: 95, color: '#ff9e64' },
     { name: 'Java / Spring', pct: 98, color: '#e0af68' },
-    { name: 'TypeScript',    pct: 85, color: '#7aa2f7' },
-    { name: 'Cloud/DevOps',  pct: 82, color: '#9ece6a' },
-    { name: 'Ruby / PHP',    pct: 92, color: '#bb9af7' },
+    { name: 'Distributed Sys', pct: 96, color: '#7aa2f7' },
+    { name: 'Cloud/DevOps',  pct: 85, color: '#9ece6a' },
+    { name: 'TypeScript',    pct: 88, color: '#7aa2f7' },
   ],
   projects: [
     {
@@ -42,18 +41,24 @@ const CONFIG = {
       desc: 'The Cognitive OS for the Modern Enterprise — AI-native multi-tenant SaaS orchestration platform with hybrid LLM + vector search.',
       lang: 'Go · Rust · TypeScript',
       url:  'https://cognix.one',
+      stars: 120,
+      updated: 'Featured'
     },
     {
       name: 'Aspen Project',
       desc: 'Industrial-grade multi-tenant SaaS framework: rapid deployment, modularity, and modular UI/API endpoints.',
       lang: 'Go · Java · React',
       url:  'https://github.com/PolyglotAndrea',
+      stars: 85,
+      updated: 'Featured'
     },
     {
       name: 'LangChainGo integrations',
       desc: 'Autonomous agents that integrate LangChainGo with enterprise DBs to create actionable intelligence pipelines.',
       lang: 'Go · LangChain',
       url:  'https://github.com/PolyglotAndrea',
+      stars: 42,
+      updated: 'Featured'
     },
   ],
   links: [
@@ -71,18 +76,31 @@ async function fetchGitHubRepos() {
   if (cachedRepos) return cachedRepos;
   
   try {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=4`);
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=30`);
     if (!res.ok) throw new Error('GitHub API error');
     
     const repos = await res.json();
-    cachedRepos = repos.map(r => ({
-      name: r.name,
-      desc: r.description || 'No description available',
-      lang: r.language || 'Unknown',
-      url:  r.html_url,
-      stars: r.stargazers_count,
-      updated: new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    }));
+    
+    // Custom sort: (stars * 2) + forks, then filter out forks if they are not significant
+    const processed = repos
+      .filter(r => !r.fork || r.stargazers_count > 10)
+      .sort((a, b) => {
+        const scoreA = (a.stargazers_count * 2) + a.forks_count;
+        const scoreB = (b.stargazers_count * 2) + b.forks_count;
+        return scoreB - scoreA;
+      })
+      .slice(0, 5)
+      .map(r => ({
+        name: r.name,
+        desc: r.description || 'No description available',
+        lang: r.language || 'Unknown',
+        url:  r.html_url,
+        stars: r.stargazers_count,
+        forks: r.forks_count,
+        updated: new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      }));
+      
+    cachedRepos = processed;
     return cachedRepos;
   } catch (err) {
     console.error('Failed to fetch GitHub repos:', err);
@@ -113,12 +131,16 @@ const blank = ()  => appendEl('span', 'blank');
 const line  = (html, cls = '') => {
   const l = appendEl('span', `line ${cls}`.trim(), html);
   outputEl.appendChild(document.createElement('br'));
+  scrollBottom();
   return l;
 };
 
 function scrollBottom() {
   const t = document.getElementById('terminal');
-  t.scrollTop = t.scrollHeight;
+  // Use requestAnimationFrame to ensure DOM is updated
+  requestAnimationFrame(() => {
+    t.scrollTop = t.scrollHeight;
+  });
 }
 
 // ── Typing Effect ──────────────────────────────────────────────────────────
@@ -128,8 +150,6 @@ async function typeLine(html, cls = '', speed = 2) {
   tempDiv.innerHTML = html;
   const text = tempDiv.innerText;
   
-  // If it has HTML, we just set it (simpler) or type char by char (complex with tags)
-  // For simplicity, if it's just text we type it, if it has tags we just show it
   if (html.includes('<')) {
     l.innerHTML = html;
   } else {
@@ -163,10 +183,10 @@ COMMANDS.help = async function() {
   blank();
   const rows = [
     ['me',          'full profile & executive summary'],
-    ['whoami',      'one-liner intro'],
+    ['whoami',      'one-liner intro & skills'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
-    ['projects',    'key projects'],
+    ['projects',    'key projects (dynamic)'],
     ['contact',     'links & contact info'],
     ['ls',          'list all "files"'],
     ['cat <file>',  'read a file'],
@@ -201,6 +221,10 @@ COMMANDS.whoami = function() {
   line(`<span class="c-purple bold">B. Andrea Horvath</span> <span class="c-dim">—</span> Senior AI Full-Stack Architect`);
   line(`<span class="c-dim">Founder of </span><span class="c-cyan">Cognix.one</span> <span class="c-dim">· United States</span>`);
   blank();
+  line(`<span class="c-green">Experience:</span> <span class="c-dim">12+ years in Java, Go, Rust, and Distributed Systems.</span>`);
+  line(`<span class="c-green">Expertise:</span> <span class="c-dim">Neural Orchestration, Multi-Agent Systems, Cloud-Native Infra.</span>`);
+  line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Summarized from GitHub/PolyglotAndrea)</span>`);
+  blank();
 };
 
 COMMANDS.interests = function() {
@@ -233,7 +257,7 @@ COMMANDS.skills = function() {
 COMMANDS.projects = async function() {
   blank();
   line(`<span class="section-head">// projects</span>`);
-  line(`<span class="c-dim">  fetching latest repos from GitHub...</span>`);
+  line(`<span class="c-dim">  fetching & sorting repositories...</span>`);
   blank();
   
   const repos = await fetchGitHubRepos();
@@ -245,12 +269,16 @@ COMMANDS.projects = async function() {
     outputEl.querySelectorAll('br')[outputEl.querySelectorAll('br').length - 2]?.remove();
   }
   
-  repos.forEach(({ name, desc, lang, url, stars, updated }) => {
+  repos.forEach(({ name, desc, lang, url, stars, updated, forks }) => {
+    const starCount = stars !== undefined ? stars : 0;
+    const updateTime = updated || 'Recent';
+    const forkCount = forks !== undefined ? `  •  🍴 ${forks}` : '';
+    
     const html =
       `<div class="project-card">` +
         `<div class="project-header">` +
           `<a class="project-name" href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` +
-          `<span class="project-meta">⭐ ${stars}  •  ${updated}</span>` +
+          `<span class="project-meta">⭐ ${starCount}${forkCount}  •  ${updateTime}</span>` +
         `</div>` +
         `<div class="project-desc">${esc(desc)}</div>` +
         `<div class="project-lang">${esc(lang)}</div>` +

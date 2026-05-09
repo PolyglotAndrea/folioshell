@@ -30,8 +30,8 @@
   --grad-a:       #bb9af7;
   --grad-b:       #7aa2f7;
   
-  /* Sizes */
-  --win-w:        clamp(320px, 90vw, 780px);
+  /* Sizes - INCREASED MAX WIDTH */
+  --win-w:        clamp(320px, 94vw, 1100px);
   --win-h:        clamp(400px, 85vh, 900px);
 }
 
