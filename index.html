@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>~/portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ambient glow blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- window chrome -->
+  <div id="window">
+    <div id="titlebar">
+      <div class="traffic-lights">
+        <span class="tl tl-red"></span>
+        <span class="tl tl-yellow"></span>
+        <span class="tl tl-green"></span>
+      </div>
+      <span id="tab-title">andrea@cognix.one — zsh — 120×40</span>
+      <div class="titlebar-right">
+        <span class="tl-icon">⌘</span>
+      </div>
+    </div>
+
+    <!-- terminal body -->
+    <div id="terminal">
+      <div id="output"></div>
+
+      <div id="input-line">
+        <span class="ps1">
+          <span class="ps1-user">andrea</span><span class="ps1-at">@</span><span class="ps1-host">cognix.one</span>
+          <span class="ps1-sep"> </span><span class="ps1-dir">~</span>
+          <span class="ps1-branch"> git:(main)</span>
+          <span class="ps1-arrow"> ❯</span>
+        </span>
+        <input
+          type="text"
+          id="cmd-input"
+          autofocus
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="terminal input"
+        />
+        <span id="cursor-block"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
