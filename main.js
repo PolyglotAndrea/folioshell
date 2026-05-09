@@ -37,28 +37,28 @@ const CONFIG = {
   ],
   projects: [
     {
-      name: 'cognix.one',
-      desc: 'The Cognitive OS for the Modern Enterprise — AI-native multi-tenant SaaS orchestration platform with hybrid LLM + vector search.',
+      name: 'cognix',
+      desc: 'The Cognitive Operating System for the Modern Enterprise — AI-native orchestration platform.',
       lang: 'Go · Rust · TypeScript',
-      url:  'https://cognix.one',
-      stars: 120,
-      updated: 'Featured'
+      url:  'https://github.com/PolyglotAndrea/cognix',
+      stars: 12,
+      updated: '2024'
     },
     {
-      name: 'Aspen Project',
-      desc: 'Industrial-grade multi-tenant SaaS framework: rapid deployment, modularity, and modular UI/API endpoints.',
-      lang: 'Go · Java · React',
-      url:  'https://github.com/PolyglotAndrea',
-      stars: 85,
-      updated: 'Featured'
+      name: 'folioshell',
+      desc: 'A premium, interactive terminal-style portfolio template built with modern glassmorphism.',
+      lang: 'JavaScript · CSS · HTML',
+      url:  'https://github.com/PolyglotAndrea/folioshell',
+      stars: 24,
+      updated: '2024'
     },
     {
-      name: 'LangChainGo integrations',
-      desc: 'Autonomous agents that integrate LangChainGo with enterprise DBs to create actionable intelligence pipelines.',
-      lang: 'Go · LangChain',
-      url:  'https://github.com/PolyglotAndrea',
-      stars: 42,
-      updated: 'Featured'
+      name: 'aspen',
+      desc: 'Industrial-grade multi-tenant SaaS framework for rapid deployment.',
+      lang: 'Go · Java',
+      url:  'https://github.com/PolyglotAndrea/aspen',
+      stars: 18,
+      updated: '2024'
     },
   ],
   links: [
@@ -75,26 +75,31 @@ let cachedRepos = null;
 async function fetchGitHubRepos() {
   if (cachedRepos) return cachedRepos;
   try {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=30`);
+    // Fetch all public repos
+    const res = await fetch(`https://api.github.com/users/${GITHUB_USER}/repos?sort=updated&per_page=100`);
     if (!res.ok) throw new Error('GitHub API error');
     const repos = await res.json();
+    
+    // Improved sorting: non-forks first, then stars + forks, then updated date
     const processed = repos
-      .filter(r => !r.fork || r.stargazers_count > 10)
       .sort((a, b) => {
-        const scoreA = (a.stargazers_count * 2) + a.forks_count;
-        const scoreB = (b.stargazers_count * 2) + b.forks_count;
-        return scoreB - scoreA;
+        if (a.fork !== b.fork) return a.fork ? 1 : -1;
+        const scoreA = (a.stargazers_count * 5) + (a.forks_count * 2);
+        const scoreB = (b.stargazers_count * 5) + (b.forks_count * 2);
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        return new Date(b.updated_at) - new Date(a.updated_at);
       })
       .slice(0, 5)
       .map(r => ({
         name: r.name,
-        desc: r.description || 'No description available',
-        lang: r.language || 'Unknown',
+        desc: r.description || 'Modern cognitive infrastructure component.',
+        lang: r.language || 'Multiple',
         url:  r.html_url,
         stars: r.stargazers_count,
         forks: r.forks_count,
-        updated: new Date(r.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        updated: new Date(r.updated_at).getFullYear().toString(),
       }));
+    
     cachedRepos = processed;
     return cachedRepos;
   } catch (err) {
@@ -270,13 +275,14 @@ COMMANDS.projects = async function() {
     outputEl.querySelectorAll('br')[outputEl.querySelectorAll('br').length - 2]?.remove();
   }
   repos.forEach(({ name, desc, lang, url, stars, updated, forks }) => {
-    const starCount = stars !== undefined ? stars : 0;
-    const updateTime = updated || 'Recent';
-    const forkCount = forks !== undefined ? `  •  🍴 ${forks}` : '';
+    const starCount = stars || 0;
+    const updateTime = updated || '2024';
+    const forkCount = forks ? `  •  🍴 ${forks}` : '';
+    // Make the entire card clickable
     const html =
-      `<div class="project-card">` +
+      `<div class="project-card" onclick="window.open('${url}', '_blank')" style="cursor:pointer;">` +
         `<div class="project-header">` +
-          `<a class="project-name" href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` +
+          `<a class="project-name" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(name)}</a>` +
           `<span class="project-meta">⭐ ${starCount}${forkCount}  •  ${updateTime}</span>` +
         `</div>` +
         `<div class="project-desc">${esc(desc)}</div>` +
@@ -292,7 +298,7 @@ COMMANDS.contact = function() {
   line(`<span class="section-head">// contact</span>`);
   blank();
   CONFIG.links.forEach(({ icon, label, url, color }) => {
-    line(`  ${icon}  <span class="${color} bold">${label}</span> <span class="c-dim">→</span> <a href="${url}" style="color:var(--fg-dim); text-decoration:none;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-dim)'">${url}</a>`);
+    line(`  ${icon}  <span class="${color} bold">${label}</span> <span class="c-dim">→</span> <a href="${url}" target="_blank" style="color:var(--fg-dim); text-decoration:none;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-dim)'">${url}</a>`);
   });
   blank();
 };
@@ -311,14 +317,11 @@ COMMANDS.banner = async function() {
     ' | | | (_) | | | | (_) \\__ \\ | | | | | |  __/ | |',
     ' |_|  \\___/  |_|_|\\___/|___/_| |_|_| |_|\\___|_|_|'
   ];
-  
   for (const l of ascii) {
     line(`<span class="c-purple" style="font-weight:bold; font-size:0.85em; opacity:0.9;">${esc(l)}</span>`);
     await new Promise(r => setTimeout(r, 10));
   }
-  
   blank();
-  
   const sysInfo = [
     { label: 'OS', val: 'CognixOS v2.0 (Custom AUI Kernel)' },
     { label: 'Uptime', val: '12 years, 4 months (High Availability)' },
@@ -326,11 +329,9 @@ COMMANDS.banner = async function() {
     { label: 'Architect', val: 'B. Andrea Horvath' },
     { label: 'Location', val: 'Decentralized / United States' }
   ];
-  
   sysInfo.forEach(info => {
     line(`<span class="c-blue bold">${info.label.padEnd(12)}</span> <span class="c-dim">▸</span> <span class="c-dim">${info.val}</span>`);
   });
-  
   blank();
   line(`<span class="c-dim">Type </span><span class="c-green bold">help</span><span class="c-dim"> to explore the cognitive infrastructure.</span>`);
   blank();
