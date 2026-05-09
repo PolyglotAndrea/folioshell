@@ -28,13 +28,13 @@ const CONFIG = {
     { icon: '🎨', text: 'AI User Interface (AUI) Design' },
   ],
   skills: [
-    { name: 'AI / ML',       pct: 90, color: '#cba6f7' },
-    { name: 'Go',            pct: 98, color: '#89dceb' },
-    { name: 'Rust',          pct: 95, color: '#fab387' },
-    { name: 'Java / Spring', pct: 98, color: '#f9e2af' },
-    { name: 'TypeScript',    pct: 75, color: '#89b4fa' },
-    { name: 'Cloud/DevOps',  pct: 82, color: '#a6e3a1' },
-    { name: 'Ruby / PHP',    pct: 98, color: '#f5c2e7' },
+    { name: 'AI / ML',       pct: 90, color: '#bb9af7' },
+    { name: 'Go',            pct: 98, color: '#7dcfff' },
+    { name: 'Rust',          pct: 95, color: '#ff9e64' },
+    { name: 'Java / Spring', pct: 98, color: '#e0af68' },
+    { name: 'TypeScript',    pct: 85, color: '#7aa2f7' },
+    { name: 'Cloud/DevOps',  pct: 82, color: '#9ece6a' },
+    { name: 'Ruby / PHP',    pct: 92, color: '#bb9af7' },
   ],
   projects: [
     {
@@ -93,6 +93,7 @@ async function fetchGitHubRepos() {
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const outputEl = document.getElementById('output');
 const inputEl  = document.getElementById('cmd-input');
+const cursorEl = document.getElementById('cursor-block');
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 const esc = s => String(s)
@@ -110,13 +111,35 @@ function appendEl(tag, cls, html) {
 
 const blank = ()  => appendEl('span', 'blank');
 const line  = (html, cls = '') => {
-  appendEl('span', `line ${cls}`.trim(), html);
+  const l = appendEl('span', `line ${cls}`.trim(), html);
   outputEl.appendChild(document.createElement('br'));
+  return l;
 };
 
 function scrollBottom() {
   const t = document.getElementById('terminal');
   t.scrollTop = t.scrollHeight;
+}
+
+// ── Typing Effect ──────────────────────────────────────────────────────────
+async function typeLine(html, cls = '', speed = 2) {
+  const l = line('', cls);
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const text = tempDiv.innerText;
+  
+  // If it has HTML, we just set it (simpler) or type char by char (complex with tags)
+  // For simplicity, if it's just text we type it, if it has tags we just show it
+  if (html.includes('<')) {
+    l.innerHTML = html;
+  } else {
+    for (let i = 0; i < text.length; i++) {
+      l.innerText += text[i];
+      scrollBottom();
+      await new Promise(r => setTimeout(r, speed));
+    }
+  }
+  scrollBottom();
 }
 
 // ── Prompt HTML (for echoing typed commands) ───────────────────────────────
@@ -134,9 +157,9 @@ function promptHTML(cmd) {
 // ── Commands ───────────────────────────────────────────────────────────────
 const COMMANDS = {};
 
-COMMANDS.help = function() {
+COMMANDS.help = async function() {
   blank();
-  line(`<span class="section-head">// available commands</span>`);
+  await typeLine(`<span class="section-head">// available commands</span>`);
   blank();
   const rows = [
     ['me',          'full profile & executive summary'],
@@ -152,30 +175,26 @@ COMMANDS.help = function() {
     ['clear',       'clear screen'],
     ['help',        'show this help'],
   ];
-  rows.forEach(([cmd, desc]) => {
+  for (const [cmd, desc] of rows) {
     line(`<span class="help-row"><span class="help-cmd">${cmd}</span><span class="help-desc">${desc}</span></span>`);
-  });
+  }
   blank();
 };
 
-COMMANDS.me = function() {
+COMMANDS.me = async function() {
   blank();
-  line(`<span class="c-purple bold">${esc(CONFIG.name)}</span>`);
+  line(`<span class="c-purple bold" style="font-size:1.2em">${esc(CONFIG.name)}</span>`);
   line(`<span class="c-dim">${esc(CONFIG.title)}</span>`);
   line(`<span class="divider"></span>`);
-  CONFIG.bio.forEach(l => {
+  for (const l of CONFIG.bio) {
     if (l === '') blank();
     else line(esc(l));
-  });
+  }
   blank();
-  line(`<span class="tag tag-peach">🌐 Flagship</span>  <span class="c-cyan">cognix.one</span>  <span class="c-dim">— The Cognitive OS for the Modern Enterprise</span>`);
-  line(`<span class="c-dim">  Multi-Tenant SaaS · Hybrid LLM + Vector Search · Go/Rust data plane</span>`);
-  blank();
-  line(`<span class="c-dim">→ </span><span class="c-green">skills</span><span class="c-dim">  → </span><span class="c-blue">projects</span><span class="c-dim">  → </span><span class="c-peach">contact</span><span class="c-dim">  → </span><span class="c-purple">interests</span>`);
+  line(`<span class="tag tag-peach">Flagship</span> <span class="c-cyan">cognix.one</span> <span class="c-dim">— The Cognitive OS</span>`);
+  line(`<span class="c-dim" style="font-size:0.9em; margin-left: 20px;">Multi-Tenant SaaS · Hybrid LLM + Vector Search · Go/Rust data plane</span>`);
   blank();
 };
-
-COMMANDS['me -h'] = COMMANDS.me;
 
 COMMANDS.whoami = function() {
   blank();
@@ -186,28 +205,26 @@ COMMANDS.whoami = function() {
 
 COMMANDS.interests = function() {
   blank();
-  line(`<span class="tag tag-purple">Interests</span>`);
+  line(`<span class="section-head">// interests</span>`);
   blank();
   CONFIG.interests.forEach(({ icon, text }) => {
-    line(`  ${icon}  <span class="bullet">${esc(text)}</span>`);
+    line(`  ${icon}  <span class="c-dim">${esc(text)}</span>`);
   });
   blank();
 };
-
-COMMANDS['glow interests.md'] = COMMANDS.interests;
 
 COMMANDS.skills = function() {
   blank();
   line(`<span class="section-head">// skills</span>`);
   blank();
   CONFIG.skills.forEach(({ name, pct, color }) => {
-    const fillStyle = `width:${pct}%; background:${color};`;
+    const fillStyle = `width:${pct}%; background:${color}; box-shadow: 0 0 10px ${color}40;`;
     const html =
-      `<span class="skill-row">` +
+      `<div class="skill-row">` +
         `<span class="skill-name">${esc(name)}</span>` +
-        `<span class="skill-bar-bg"><span class="skill-bar-fill" style="${fillStyle}"></span></span>` +
+        `<div class="skill-bar-bg"><div class="skill-bar-fill" style="${fillStyle}"></div></div>` +
         `<span class="skill-pct">${pct}%</span>` +
-      `</span>`;
+      `</div>`;
     line(html);
   });
   blank();
@@ -224,23 +241,20 @@ COMMANDS.projects = async function() {
   // clear "fetching" message
   const lines = outputEl.querySelectorAll('.line');
   if (lines.length >= 2) {
-    lines[lines.length - 2].remove(); // remove "fetching..." line
+    lines[lines.length - 2].remove();
     outputEl.querySelectorAll('br')[outputEl.querySelectorAll('br').length - 2]?.remove();
   }
   
   repos.forEach(({ name, desc, lang, url, stars, updated }) => {
     const html =
-      `<span class="project-card">` +
-        `<span class="project-icon">◈</span>` +
-        `<span>` +
+      `<div class="project-card">` +
+        `<div class="project-header">` +
           `<a class="project-name" href="${url}" target="_blank" rel="noopener">${esc(name)}</a>` +
-          `  <span class="project-meta">⭐ ${stars}  •  ${updated}</span>` +
-          `<br>` +
-          `<span class="project-desc">${esc(desc)}</span>` +
-          `<br>` +
-          `<span class="project-lang">[${esc(lang)}]</span>` +
-        `</span>` +
-      `</span>`;
+          `<span class="project-meta">⭐ ${stars}  •  ${updated}</span>` +
+        `</div>` +
+        `<div class="project-desc">${esc(desc)}</div>` +
+        `<div class="project-lang">${esc(lang)}</div>` +
+      `</div>`;
     line(html);
   });
   blank();
@@ -248,16 +262,10 @@ COMMANDS.projects = async function() {
 
 COMMANDS.contact = function() {
   blank();
-  line(`<span class="tag tag-blue">Contact</span>`);
+  line(`<span class="section-head">// contact</span>`);
   blank();
   CONFIG.links.forEach(({ icon, label, url, color }) => {
-    const html =
-      `<span class="contact-row">` +
-        `<span class="contact-icon">${icon}</span>` +
-        `<span class="contact-label ${color}">${esc(label)}</span>` +
-        `<span class="contact-url"><a href="${url}" target="_blank" rel="noopener">${esc(url)}</a></span>` +
-      `</span>`;
-    line(html);
+    line(`  ${icon}  <span class="${color} bold">${label}</span> <span class="c-dim">→</span> <a href="${url}" style="color:var(--fg-dim); text-decoration:none;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-dim)'">${url}</a>`);
   });
   blank();
 };
@@ -266,63 +274,48 @@ COMMANDS.clear = function() {
   outputEl.innerHTML = '';
 };
 
-COMMANDS.banner = function() {
-  blank();
-  line(`<span class="banner-title">╔════════════════════════════════════════════╗</span>`);
-  line(`<span class="banner-title">║                                            ║</span>`);
-  line(`<span class="banner-title">║        <span class="c-purple bold" style="letter-spacing:0.3em">F O L I O S H E L L</span>        ║</span>`);
-  line(`<span class="banner-title">║                                            ║</span>`);
-  line(`<span class="banner-title">╠════════════════════════════════════════════╣</span>`);
-  line(`<span class="banner-title">║                                            ║</span>`);
-  line(`<span class="banner-title">║  <span class="c-cyan bold">${esc(CONFIG.name)}</span>                       ║</span>`);
-  line(`<span class="banner-title">║  <span class="c-dim">${esc(CONFIG.title).substring(0, 40)}</span>  ║</span>`);
-  line(`<span class="banner-title">║                                            ║</span>`);
-  line(`<span class="banner-title">╚════════════════════════════════════════════╝</span>`);
+COMMANDS.banner = async function() {
+  const banner = [
+    '╔════════════════════════════════════════════╗',
+    '║                                            ║',
+    '║        F O L I O S H E L L v2.0            ║',
+    '║                                            ║',
+    '╠════════════════════════════════════════════╣',
+    '║                                            ║',
+    '║  B. Andrea Horvath                         ║',
+    '║  Senior AI Full-Stack Architect            ║',
+    '║                                            ║',
+    '╚════════════════════════════════════════════╝'
+  ];
+  for (const l of banner) {
+    line(`<span class="c-purple" style="opacity:0.8; font-size:0.9em;">${esc(l)}</span>`);
+    await new Promise(r => setTimeout(r, 10));
+  }
   blank();
 };
 
 COMMANDS.ls = function() {
   blank();
-  const files = [
-    { name: 'me.md',        color: 'c-cyan'   },
-    { name: 'interests.md', color: 'c-cyan'   },
-    { name: 'skills.md',    color: 'c-cyan'   },
-    { name: 'projects.md',  color: 'c-cyan'   },
-    { name: 'contact.md',   color: 'c-cyan'   },
-  ];
-  const row = files.map(f => `<span class="${f.color}">${f.name}</span>`).join('   ');
-  line(row);
+  const files = ['me.md', 'interests.md', 'skills.md', 'projects.md', 'contact.md'];
+  line(files.map(f => `<span class="c-cyan">${f}</span>`).join('   '));
   blank();
 };
 
-COMMANDS.pwd = function() {
-  line(`<span class="c-green">/home/${esc(CONFIG.user)}</span>`);
-};
-
 COMMANDS.date = function() {
-  line(`<span class="c-yellow">${new Date().toLocaleString('zh-CN', { timeZoneName: 'short', hour12: false })}</span>`);
-};
-
-// ── Cat command ────────────────────────────────────────────────────────────
-const CAT_MAP = {
-  'me.md':        COMMANDS.me,
-  'interests.md': COMMANDS.interests,
-  'skills.md':    COMMANDS.skills,
-  'projects.md':  COMMANDS.projects,
-  'contact.md':   COMMANDS.contact,
+  line(`<span class="c-yellow">${new Date().toLocaleString('en-US', { timeZoneName: 'short', hour12: false })}</span>`);
 };
 
 // ── Input handling ─────────────────────────────────────────────────────────
 const history = [];
 let histIdx = -1;
 
-inputEl.addEventListener('keydown', e => {
+inputEl.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
     const raw = inputEl.value.trim();
     inputEl.value = '';
     histIdx = -1;
+    updateCursor();
 
-    // echo the command with styled prompt
     line(promptHTML(raw));
 
     if (!raw) { scrollBottom(); return; }
@@ -332,85 +325,78 @@ inputEl.addEventListener('keydown', e => {
     const baseCmd  = lower.split(' ')[0];
     const args     = raw.slice(baseCmd.length).trim();
 
-    // execute command (async support)
-    (async () => {
-      if (COMMANDS[lower]) {
-        await COMMANDS[lower]();
-      } else if (baseCmd === 'echo') {
-        blank();
-        line(esc(args));
-        blank();
-      } else if (baseCmd === 'cat') {
-        const file = args.toLowerCase();
-        if (CAT_MAP[file]) await CAT_MAP[file]();
-        else {
-          blank();
-          line(`<span class="error">cat: ${esc(args)}: No such file or directory</span>`);
-          blank();
-        }
-      } else {
-        blank();
-        line(`<span class="error">command not found: ${esc(raw)}</span>`);
-        line(`<span class="c-dim">输入 <span class="c-green">help</span> 查看可用命令</span>`);
-        blank();
-      }
-
-      scrollBottom();
-    })();
+    if (COMMANDS[lower]) {
+      await COMMANDS[lower]();
+    } else if (baseCmd === 'echo') {
+      line(esc(args));
+    } else if (baseCmd === 'cat') {
+      const file = args.toLowerCase();
+      const CAT_MAP = {
+        'me.md': COMMANDS.me,
+        'interests.md': COMMANDS.interests,
+        'skills.md': COMMANDS.skills,
+        'projects.md': COMMANDS.projects,
+        'contact.md': COMMANDS.contact,
+      };
+      if (CAT_MAP[file]) await CAT_MAP[file]();
+      else line(`<span class="c-red">cat: ${esc(args)}: No such file</span>`);
+    } else if (baseCmd === 'clear') {
+      COMMANDS.clear();
+    } else {
+      line(`<span class="c-red">command not found: ${esc(raw)}</span>`);
+    }
+    scrollBottom();
   }
 
-  // history ↑ ↓
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     if (histIdx < history.length - 1) inputEl.value = history[++histIdx];
+    updateCursor();
   }
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (histIdx > 0)  inputEl.value = history[--histIdx];
     else { histIdx = -1; inputEl.value = ''; }
+    updateCursor();
   }
-
-  // Tab completion
+  
   if (e.key === 'Tab') {
     e.preventDefault();
     const partial = inputEl.value.toLowerCase();
     if (!partial) return;
     const all = [...Object.keys(COMMANDS), 'cat ', 'echo '];
-    const match = all.find(c => c.startsWith(partial) && c !== partial);
+    const match = all.find(c => c.startsWith(partial));
     if (match) inputEl.value = match;
+    updateCursor();
   }
 });
 
-// click anywhere → focus input
-document.addEventListener('click', () => inputEl.focus());
-
-// ── Cursor positioning ────────────────────────────────────────────────────
-const cursorEl = document.getElementById('cursor-block');
-const ps1El = document.querySelector('.ps1');
-
+// ── Cursor Positioning — Simplified ────────────────────────────────────────
 function updateCursor() {
-  // measure prompt width + input text width
-  const ps1Width = ps1El.offsetWidth;
-  const textWidth = getTextWidth(inputEl.value, getComputedStyle(inputEl).font);
-  cursorEl.style.left = `${ps1Width + textWidth + 2}px`;
-}
-
-function getTextWidth(text, font) {
-  const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement('canvas'));
-  const ctx = canvas.getContext('2d');
-  ctx.font = font;
-  return ctx.measureText(text).width;
+  const val = inputEl.value;
+  const temp = document.createElement('span');
+  temp.style.font = getComputedStyle(inputEl).font;
+  temp.style.visibility = 'hidden';
+  temp.style.position = 'absolute';
+  temp.style.whiteSpace = 'pre';
+  temp.innerText = val;
+  document.body.appendChild(temp);
+  const width = temp.offsetWidth;
+  cursorEl.style.transform = `translateX(${width}px)`;
+  document.body.removeChild(temp);
 }
 
 inputEl.addEventListener('input', updateCursor);
-inputEl.addEventListener('keydown', () => setTimeout(updateCursor, 0));
-updateCursor();
+window.addEventListener('resize', updateCursor);
+document.addEventListener('click', () => inputEl.focus());
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-function boot() {
-  COMMANDS.banner();
-  line(`  Welcome. Type <span class="c-green">help</span> for available commands, or <span class="c-purple">me</span> for a full profile.`);
+async function boot() {
+  await COMMANDS.banner();
+  line(`  Welcome to <span class="c-purple bold">Folioshell v2.0</span>.`);
+  line(`  Type <span class="c-green">help</span> to explore.`);
   blank();
+  updateCursor();
 }
 
 boot();

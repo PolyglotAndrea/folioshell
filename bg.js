@@ -1,22 +1,25 @@
 /**
  * bg.js — animated particle network with mouse follow
+ * Updated for Folioshell v2.0
  */
 (function () {
   const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
   const ctx    = canvas.getContext('2d');
 
-  const COLORS = ['#cba6f7', '#89b4fa', '#94e2d5', '#f5c2e7', '#89dceb'];
+  // Tokyo Night / Moonlight palette
+  const COLORS = ['#bb9af7', '#7aa2f7', '#7dcfff', '#9ece6a', '#e0af68'];
 
   const CFG = {
-    particleCount : 80,
-    maxDist       : 140,
-    dotRadius      : 1.6,
-    speed          : 0.3,
-    gridSpacing    : 50,
-    gridOpacity    : 0.06,
-    lineOpacity    : 0.15,
-    mouseRadius    : 200,
-    mouseRepel     : 0.025,  // mouse repel strength (push away)
+    particleCount : 60,
+    maxDist       : 160,
+    dotRadius      : 1.2,
+    speed          : 0.25,
+    gridSpacing    : 60,
+    gridOpacity    : 0.04,
+    lineOpacity    : 0.12,
+    mouseRadius    : 250,
+    mouseRepel     : 0.03,
   };
 
   let W, H, particles, mouse = { x: -999, y: -999 };
@@ -29,15 +32,15 @@
   function makeParticle() {
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     const angle = Math.random() * Math.PI * 2;
-    const spd   = CFG.speed * (0.5 + Math.random() * 0.7);
+    const spd   = CFG.speed * (0.4 + Math.random() * 0.8);
     return {
       x:  Math.random() * W,
       y:  Math.random() * H,
       vx: Math.cos(angle) * spd,
       vy: Math.sin(angle) * spd,
-      r:  CFG.dotRadius * (0.7 + Math.random() * 0.6),
+      r:  CFG.dotRadius * (0.8 + Math.random() * 0.6),
       color,
-      alpha: 0.4 + Math.random() * 0.4,
+      alpha: 0.3 + Math.random() * 0.4,
     };
   }
 
@@ -47,12 +50,12 @@
   }
 
   function drawGrid() {
-    ctx.fillStyle = `rgba(203,166,247,${CFG.gridOpacity})`;
+    ctx.fillStyle = `rgba(187, 154, 247, ${CFG.gridOpacity})`;
     const s = CFG.gridSpacing;
     for (let x = s / 2; x < W; x += s) {
       for (let y = s / 2; y < H; y += s) {
         ctx.beginPath();
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.arc(x, y, 0.8, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -65,7 +68,7 @@
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
 
-      // mouse repel (push away)
+      // mouse repel
       const dx = p.x - mouse.x;
       const dy = p.y - mouse.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -76,12 +79,12 @@
       }
 
       // dampen
-      p.vx *= 0.997;
-      p.vy *= 0.997;
+      p.vx *= 0.995;
+      p.vy *= 0.995;
 
       // clamp speed
       const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-      const maxSpd = CFG.speed * 2;
+      const maxSpd = CFG.speed * 2.5;
       if (spd > maxSpd) {
         p.vx = (p.vx / spd) * maxSpd;
         p.vy = (p.vy / spd) * maxSpd;
@@ -91,10 +94,10 @@
       p.y += p.vy;
 
       // wrap
-      if (p.x < -10) p.x = W + 10;
-      if (p.x > W + 10) p.x = -10;
-      if (p.y < -10) p.y = H + 10;
-      if (p.y > H + 10) p.y = -10;
+      if (p.x < -20) p.x = W + 20;
+      if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20;
+      if (p.y > H + 20) p.y = -20;
 
       // draw dot
       ctx.beginPath();
@@ -113,8 +116,8 @@
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(q.x, q.y);
-          ctx.strokeStyle = `rgba(203,166,247,${alpha})`;
-          ctx.lineWidth   = 0.7;
+          ctx.strokeStyle = `rgba(187, 154, 247, ${alpha})`;
+          ctx.lineWidth   = 0.6;
           ctx.stroke();
         }
       }
@@ -124,8 +127,14 @@
   }
 
   window.addEventListener('resize', resize);
-  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  window.addEventListener('mouseleave', () => { mouse.x = -999; mouse.y = -999; });
+  window.addEventListener('mousemove', e => { 
+    mouse.x = e.clientX; 
+    mouse.y = e.clientY; 
+  });
+  window.addEventListener('mouseleave', () => { 
+    mouse.x = -999; 
+    mouse.y = -999; 
+  });
 
   init();
   frame();
