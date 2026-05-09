@@ -68,6 +68,51 @@ const CONFIG = {
   ],
 };
 
+// ── Blogs (Mocked Folder Structure) ────────────────────────────────────────
+const BLOGS = [
+  {
+    id: 'neural-orchestration',
+    title: 'The Era of Neural Orchestration',
+    date: '2024-05-01',
+    tags: ['AI', 'Architecture'],
+    content: [
+      '# The Era of Neural Orchestration',
+      '',
+      'As we move beyond simple LLM calls, the need for a "Cognitive OS" becomes clear.',
+      'Neural orchestration is the layer that manages multi-agent handoffs,',
+      'long-term memory retrieval, and tool execution in a deterministic way.',
+      '',
+      'In this post, I explore how we build these systems using Go and Rust...'
+    ]
+  },
+  {
+    id: 'distributed-rust',
+    title: 'High-Performance Distributed Systems in Rust',
+    date: '2024-04-15',
+    tags: ['Rust', 'Distributed Systems'],
+    content: [
+      '# High-Performance Distributed Systems in Rust',
+      '',
+      'Rust provides the safety and performance required for the next generation',
+      'of cloud-native infrastructure. From zero-cost abstractions to fearless',
+      'concurrency, it is the perfect tool for building data planes...'
+    ]
+  },
+  {
+    id: 'the-future-of-aui',
+    title: 'AUI: The Future of User Interfaces',
+    date: '2024-03-10',
+    tags: ['Design', 'AI'],
+    content: [
+      '# AUI: The Future of User Interfaces',
+      '',
+      'Traditional UI is dying. AI User Interfaces (AUI) are not just chat boxes;',
+      'they are dynamic, context-aware environments that adapt to the user\'s intent',
+      'in real-time...'
+    ]
+  }
+];
+
 // ── GitHub API integration ────────────────────────────────────────────────
 const GITHUB_USER = 'PolyglotAndrea';
 let cachedRepos = null;
@@ -178,6 +223,7 @@ COMMANDS.help = async function() {
   const rows = [
     ['me',          'full profile & executive summary'],
     ['whoami',      'detailed technical deep-dive'],
+    ['blogs',       'list or read articles'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
     ['projects',    'key projects (dynamic)'],
@@ -229,6 +275,33 @@ COMMANDS.whoami = async function() {
   });
   blank();
   line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Information distilled from https://github.com/PolyglotAndrea)</span>`);
+  blank();
+};
+
+COMMANDS.blogs = function(args) {
+  blank();
+  if (args) {
+    const post = BLOGS.find(b => b.id === args || `blogs/${b.id}.md` === args);
+    if (post) {
+      line(`<span class="c-cyan bold">${post.title}</span> <span class="c-dim">[${post.date}]</span>`);
+      line(`<span class="divider"></span>`);
+      post.content.forEach(l => line(esc(l)));
+      blank();
+      return;
+    } else {
+      line(`<span class="c-red">Error: Blog post "${args}" not found.</span>`);
+      blank();
+      return;
+    }
+  }
+
+  line(`<span class="section-head">// articles</span>`);
+  blank();
+  BLOGS.forEach(b => {
+    line(`<span class="c-green bold">${b.date}</span>  <span class="c-cyan">${b.id}.md</span> <span class="c-dim">— ${b.title}</span>`);
+  });
+  blank();
+  line(`<span class="c-dim">Usage: blogs &lt;filename&gt;  or  cat blogs/&lt;filename&gt;</span>`);
   blank();
 };
 
@@ -318,20 +391,16 @@ COMMANDS.banner = async function() {
     await new Promise(r => setTimeout(r, 10));
   }
   blank();
-  
-  // Simulated boot sequence
   const bootLines = [
     { l: '▸ Initializing cognitive kernels...', c: 'c-dim' },
     { l: '▸ Loading neural orchestration modules...', c: 'c-dim' },
     { l: '▸ Connecting to high-performance data planes...', c: 'c-dim' },
     { l: '▸ SUCCESS: Cognix OS interface ready.', c: 'c-green' }
   ];
-  
   for (const bl of bootLines) {
     line(`<span class="${bl.c}">${bl.l}</span>`);
     await new Promise(r => setTimeout(r, 80));
   }
-  
   blank();
   const sysInfo = [
     { label: 'KERNEL', val: 'Linux 6.8.0-cognix-ai-x86_64' },
@@ -349,8 +418,11 @@ COMMANDS.banner = async function() {
 
 COMMANDS.ls = function() {
   blank();
-  const files = ['me.md', 'interests.md', 'skills.md', 'projects.md', 'contact.md'];
-  line(files.map(f => `<span class="c-cyan">${f}</span>`).join('   '));
+  const files = ['me.md', 'interests.md', 'skills.md', 'projects.md', 'contact.md', 'blogs/'];
+  line(files.map(f => {
+    if (f.endsWith('/')) return `<span class="c-blue bold">${f}</span>`;
+    return `<span class="c-cyan">${f}</span>`;
+  }).join('   '));
   blank();
 };
 
@@ -376,8 +448,9 @@ inputEl.addEventListener('keydown', async e => {
     const lower    = trimmed.toLowerCase();
     const baseCmd  = lower.split(' ')[0];
     const args     = trimmed.slice(baseCmd.length).trim();
-    if (COMMANDS[lower]) {
-      await COMMANDS[lower]();
+    
+    if (COMMANDS[baseCmd]) {
+      await COMMANDS[baseCmd](args);
     } else if (baseCmd === 'echo') {
       line(esc(args));
     } else if (baseCmd === 'cat') {
@@ -389,8 +462,13 @@ inputEl.addEventListener('keydown', async e => {
         'projects.md': COMMANDS.projects,
         'contact.md': COMMANDS.contact,
       };
-      if (CAT_MAP[file]) await CAT_MAP[file]();
-      else line(`<span class="c-red">cat: ${esc(args)}: No such file</span>`);
+      if (CAT_MAP[file]) {
+        await CAT_MAP[file]();
+      } else if (file.startsWith('blogs/')) {
+        COMMANDS.blogs(file);
+      } else {
+        line(`<span class="c-red">cat: ${esc(args)}: No such file</span>`);
+      }
     } else if (baseCmd === 'clear') {
       COMMANDS.clear();
     } else {
