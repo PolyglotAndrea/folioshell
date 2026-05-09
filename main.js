@@ -177,9 +177,13 @@ COMMANDS.skills = function() {
     const fillStyle = `width:${pct}%; background:${color};`;
     const html =
       `<span class="skill-row">` +
-        `<span class="skill-name">${esc(name)}</span>` +
-        `<span class="skill-bar-bg"><span class="skill-bar-fill" style="${fillStyle}"></span></span>` +
-        `<span class="skill-pct">${pct}%</span>` +
+        `<span class="skill-header">` +
+          `<span class="skill-name">${esc(name)}</span>` +
+          `<span class="skill-pct">${pct}%</span>` +
+        `</span>` +
+        `<span class="skill-bar-bg">` +
+          `<span class="skill-bar-fill" style="${fillStyle}"></span>` +
+        `</span>` +
       `</span>`;
     line(html);
   });
@@ -339,6 +343,23 @@ inputEl.addEventListener('keydown', e => {
 
 // click anywhere → focus input
 document.addEventListener('click', () => inputEl.focus());
+
+// ── Cursor positioning ────────────────────────────────────────────────────
+const cursorEl = document.getElementById('cursor-block');
+function updateCursor() {
+  const ps1Width = document.querySelector('.ps1').offsetWidth;
+  const inputRect = inputEl.getBoundingClientRect();
+  const textWidth = getTextWidth(inputEl.value, '13px JetBrains Mono, monospace');
+  cursorEl.style.left = `${ps1Width + textWidth + 7}px`;
+}
+function getTextWidth(text, font) {
+  const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement('canvas'));
+  const ctx = canvas.getContext('2d');
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
+inputEl.addEventListener('input', updateCursor);
+updateCursor();
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 function boot() {
