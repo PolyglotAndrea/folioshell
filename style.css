@@ -35,18 +35,56 @@ html, body {
   background: linear-gradient(135deg, #080910 0%, #0d0e18 100%);
   font-family: var(--font);
   font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.6;
   overflow: hidden;
 }
 
-/* ── Canvas background (hidden) ── */
+/* ── Canvas background ── */
 #bg-canvas {
-  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-/* ── Floating glow orbs (hidden) ── */
+/* ── Floating glow orbs ── */
 .orb {
-  display: none;
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  filter: blur(90px);
+  opacity: 0.4;
+}
+.orb-1 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #cba6f766 0%, transparent 70%);
+  top: -10%; left: -8%;
+  animation: drift1 20s ease-in-out infinite alternate;
+}
+.orb-2 {
+  width: 340px; height: 340px;
+  background: radial-gradient(circle, #89b4fa55 0%, transparent 70%);
+  bottom: -8%; right: 5%;
+  animation: drift2 24s ease-in-out infinite alternate;
+}
+.orb-3 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, #94e2d544 0%, transparent 70%);
+  top: 40%; right: 15%;
+  animation: drift3 18s ease-in-out infinite alternate;
+}
+@keyframes drift1 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(50px, 70px) scale(1.1); }
+}
+@keyframes drift2 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-40px, -50px) scale(1.08); }
+}
+@keyframes drift3 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(35px, -45px) scale(0.92); }
 }
 
 /* ── Centering scene ── */
@@ -307,31 +345,21 @@ html, body {
 
 /* ── Skill bar ── */
 .skill-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin: 8px 0;
-  padding: 6px 0;
-}
-.skill-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: 140px 1fr 42px;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 5px 0;
 }
 .skill-name {
   color: var(--fg);
   -webkit-text-fill-color: var(--fg);
   font-weight: 500;
-  font-size: 0.92em;
-}
-.skill-pct {
-  color: var(--fg-dim);
-  -webkit-text-fill-color: var(--fg-dim);
-  font-size: 0.78em;
-  font-weight: 600;
+  font-size: 0.9em;
 }
 .skill-bar-bg {
-  height: 6px;
+  height: 5px;
   background: var(--fg-subtle);
   border-radius: 99px;
   overflow: hidden;
@@ -343,25 +371,17 @@ html, body {
   transform-origin: left;
   animation: grow 0.7s cubic-bezier(.22,1,.36,1) both;
   position: relative;
-  overflow: hidden;
 }
-.skill-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  animation: shimmer 2s ease-in-out infinite;
+.skill-pct {
+  color: var(--fg-dim);
+  -webkit-text-fill-color: var(--fg-dim);
+  font-size: 0.78em;
+  font-weight: 600;
+  text-align: right;
 }
 @keyframes grow {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
-}
-@keyframes shimmer {
-  0%, 100% { transform: translateX(-100%); }
-  50%      { transform: translateX(100%); }
 }
 
 /* ── Project card ── */

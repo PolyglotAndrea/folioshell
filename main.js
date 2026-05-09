@@ -177,13 +177,9 @@ COMMANDS.skills = function() {
     const fillStyle = `width:${pct}%; background:${color};`;
     const html =
       `<span class="skill-row">` +
-        `<span class="skill-header">` +
-          `<span class="skill-name">${esc(name)}</span>` +
-          `<span class="skill-pct">${pct}%</span>` +
-        `</span>` +
-        `<span class="skill-bar-bg">` +
-          `<span class="skill-bar-fill" style="${fillStyle}"></span>` +
-        `</span>` +
+        `<span class="skill-name">${esc(name)}</span>` +
+        `<span class="skill-bar-bg"><span class="skill-bar-fill" style="${fillStyle}"></span></span>` +
+        `<span class="skill-pct">${pct}%</span>` +
       `</span>`;
     line(html);
   });
