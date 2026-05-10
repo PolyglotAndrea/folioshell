@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ai-programming-paradigm-shift",
+    "title": "The Paradigm Shift in AI Programming",
+    "date": "2024-05-10",
+    "file": "2024-05-10-ai-programming-paradigm-shift.md"
+  },
+  {
+    "id": "neural-orchestration",
+    "title": "The Era of Neural Orchestration",
+    "date": "2024-05-01",
+    "file": "2024-05-01-neural-orchestration.md"
+  },
+  {
+    "id": "distributed-rust",
+    "title": "High-Performance Distributed Systems in Rust",
+    "date": "2024-04-15",
+    "file": "2024-04-15-distributed-rust.md"
+  }
+]

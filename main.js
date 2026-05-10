@@ -68,89 +68,39 @@ const CONFIG = {
   ],
 };
 
-// ── Blogs ──────────────────────────────────────────────────────────────────
-const BLOGS = [
-  {
-    id: 'ai-programming-paradigm-shift',
-    title: 'The Paradigm Shift in AI Programming',
-    date: '2024-05-10',
-    tags: ['AI', 'Claude Code', 'Trellis', 'Graphify'],
-    content: [
-      '# The Paradigm Shift in AI Programming',
-      '## From First Principles to Graph-Based Workflows',
-      '',
-      'Software engineering is undergoing a transformation unlike anything before. As Boris Cherny, the lead behind Claude Code, has argued, code generation is increasingly becoming a solved problem.',
-      '',
-      'Over the next one or two years, the traditional title of "software engineer" may gradually fade, replaced by a more versatile role: the **Builder**.',
-      '',
-      '---',
-      '',
-      '## I. Understanding Large Models: "The Bitter Lesson"',
-      'Traditional systems relied on manually written if-else rules. Real-world complexity proved too high for handcrafted logic.',
-      '',
-      'The real breakthrough arrived in 2017 with the Transformer architecture. One principle has repeatedly proven true: **The Bitter Lesson**. General-purpose models consistently outperform systems over-engineered for narrow tasks.',
-      '',
-      '## II. Capability Limits and Harness Engineering',
-      'A large language model performs a deceptively simple task: **Predict the next token**.',
-      '',
-      'To address context limitations and O(n^2) complexity, we now use "Harness Engineering":',
-      '1. **Architectural Constraints**: Externalized rules into CI/linters.',
-      '2. **Execution Loops**: Task decomposition, tool invocation, and feedback.',
-      '3. **Memory Governance**: Persistent long-term documentation and specs.',
-      '',
-      '## III. Claude Code in Practice: Iterative Agentic Workflows',
-      'Collect context -> Take action -> Verify results.',
-      '',
-      '1. **Enable Plan Mode**: Reduce context pollution via read-only exploration.',
-      '2. **Use Subagents Aggressively**: Isolate context windows for focused tasks.',
-      '3. **Configure Skills and Hooks**: On-demand workflows and deterministic logic.',
-      '',
-      '## IV. The Evolution of Ultimate Workflows: Trellis and Graphify',
-      '',
-      '### 1. Trellis: An External Memory Brain for AI',
-      'Addressing session amnesia via three layers: Spec Layer, Task Layer, and Workspace Layer (Persistent memory).',
-      '',
-      '### 2. Graphify: From Codebases to Knowledge Graphs',
-      'Inspired by Karpathy, Graphify compiles entire projects into knowledge graphs for precise navigation and multimodal understanding.',
-      '',
-      '## Conclusion: Advice for Future Builders',
-      '1. Use the strongest models available (Opus-class).',
-      '2. Evolve into a Cross-Disciplinary Generalist.',
-      '3. Build and Preserve Your Own Spec Assets.',
-      '',
-      'In the age of AI-native software development, your Specs become your institutional memory—and your real intellectual property.',
-      '',
-      '---',
-      'Full article available at: https://github.com/PolyglotAndrea'
-    ]
-  },
-  {
-    id: 'neural-orchestration',
-    title: 'The Era of Neural Orchestration',
-    date: '2024-05-01',
-    tags: ['AI', 'Architecture'],
-    content: [
-      '# The Era of Neural Orchestration',
-      '',
-      'As we move beyond simple LLM calls, the need for a "Cognitive OS" becomes clear.',
-      'Neural orchestration is the layer that manages multi-agent handoffs, long-term memory retrieval, and tool execution in a deterministic way.',
-      '',
-      'In this post, I explore how we build these systems using Go and Rust...'
-    ]
-  },
-  {
-    id: 'distributed-rust',
-    title: 'High-Performance Distributed Systems in Rust',
-    date: '2024-04-15',
-    tags: ['Rust', 'Distributed Systems'],
-    content: [
-      '# High-Performance Distributed Systems in Rust',
-      '',
-      'Rust provides the safety and performance required for the next generation of cloud-native infrastructure.',
-      'From zero-cost abstractions to fearless concurrency, it is the perfect tool for building data planes...'
-    ]
+// ── Blogs State & Fetching ──────────────────────────────────────────────────
+let BLOGS = [];
+let isReaderMode = false;
+let selectedBlogIdx = 0;
+
+async function fetchBlogManifest() {
+  try {
+    const res = await fetch('blogs/manifest.json');
+    if (!res.ok) throw new Error('Manifest not found');
+    BLOGS = await res.json();
+    return true;
+  } catch (err) {
+    console.error('Failed to load blog manifest:', err);
+    return false;
   }
-];
+}
+
+async function fetchBlogPostContent(filename) {
+  try {
+    const res = await fetch(`blogs/${filename}`);
+    if (!res.ok) throw new Error('Post not found');
+    const text = await res.json(); // Wait, it's MD, so .text()
+    return text;
+  } catch (err) {
+    // If json fails, try text (it is a .md file)
+    try {
+      const res = await fetch(`blogs/${filename}`);
+      return await res.text();
+    } catch (e) {
+      return '# Error\nCould not load post content.';
+    }
+  }
+}
 
 // ── GitHub API integration ────────────────────────────────────────────────
 const GITHUB_USER = 'PolyglotAndrea';
@@ -194,10 +144,6 @@ const inputEl  = document.getElementById('cmd-input');
 const cursorEl = document.getElementById('cursor-block');
 const terminalEl = document.getElementById('terminal');
 
-// ── App State ──────────────────────────────────────────────────────────────
-let isReaderMode = false;
-let selectedBlogIdx = 0;
-
 // ── Utilities ──────────────────────────────────────────────────────────────
 const esc = s => String(s)
   .replace(/&/g,'&amp;')
@@ -228,15 +174,20 @@ function scrollBottom() {
 }
 
 // ── Reader Logic ────────────────────────────────────────────────────────────
-function openBlogReader() {
+async function openBlogReader() {
+  line(`<span class="c-dim">Connecting to blog neural core...</span>`);
+  const ok = await fetchBlogManifest();
+  if (!ok || BLOGS.length === 0) {
+    line(`<span class="c-red">Error: Could not retrieve blog manifest.</span>`);
+    return;
+  }
+
   isReaderMode = true;
   selectedBlogIdx = 0;
   
-  // Create reader UI
   const reader = document.createElement('div');
   reader.id = 'blog-reader-ui';
   reader.className = 'blog-reader';
-  
   reader.innerHTML = `
     <div class="reader-sidebar" id="reader-sidebar"></div>
     <div class="reader-main" id="reader-main"></div>
@@ -244,9 +195,8 @@ function openBlogReader() {
   
   outputEl.appendChild(reader);
   renderBlogList();
-  renderBlogPost();
+  await renderBlogPost();
   
-  // Hide input line
   document.getElementById('input-line').style.display = 'none';
   scrollBottom();
 }
@@ -263,15 +213,14 @@ function renderBlogList() {
       <span class="item-date">${blog.date}</span>
       <span class="item-title">${blog.title}</span>
     `;
-    item.onclick = () => {
+    item.onclick = async () => {
       selectedBlogIdx = i;
       renderBlogList();
-      renderBlogPost();
+      await renderBlogPost();
     };
     sidebar.appendChild(item);
   });
   
-  // Footer help
   const footer = document.createElement('div');
   footer.style.padding = '20px';
   footer.style.marginTop = 'auto';
@@ -281,21 +230,23 @@ function renderBlogList() {
   sidebar.appendChild(footer);
 }
 
-function renderBlogPost() {
+async function renderBlogPost() {
   const viewer = document.getElementById('reader-main');
   if (!viewer) return;
   
   const blog = BLOGS[selectedBlogIdx];
+  viewer.innerHTML = `<span class="c-dim">Loading content from ${esc(blog.file)}...</span>`;
   
-  // Simple MD to HTML
-  const html = blog.content.map(l => {
+  const content = await fetchBlogPostContent(blog.file);
+  const lines = content.split('\n');
+  
+  const html = lines.map(l => {
     if (l.startsWith('# ')) return `<h1>${l.slice(2)}</h1>`;
     if (l.startsWith('## ')) return `<h2>${l.slice(3)}</h2>`;
     if (l.startsWith('### ')) return `<h3>${l.slice(4)}</h3>`;
     if (l.startsWith('---')) return `<hr/>`;
     if (l.trim() === '') return `<br/>`;
     
-    // Bold and Code backticks
     let line = esc(l)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/`(.*?)`/g, '<code>$1</code>');
@@ -313,7 +264,7 @@ function closeBlogReader() {
   if (reader) reader.remove();
   document.getElementById('input-line').style.display = 'flex';
   inputEl.focus();
-  line(`<span class="c-dim">Exited blog reader.</span>`);
+  line(`<span class="c-dim">Neural core detached.</span>`);
 }
 
 // ── Typing Effect ──────────────────────────────────────────────────────────
@@ -545,23 +496,21 @@ const history = [];
 let histIdx = -1;
 
 inputEl.addEventListener('keydown', async e => {
-  // Reader Mode Keyboard Handling
   if (isReaderMode) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       selectedBlogIdx = (selectedBlogIdx - 1 + BLOGS.length) % BLOGS.length;
       renderBlogList();
-      renderBlogPost();
+      await renderBlogPost();
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       selectedBlogIdx = (selectedBlogIdx + 1) % BLOGS.length;
       renderBlogList();
-      renderBlogPost();
+      await renderBlogPost();
     }
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Enter just confirms (visual feedback already synced)
     }
     if (e.key === 'Escape' || e.key.toLowerCase() === 'q') {
       e.preventDefault();
@@ -570,7 +519,6 @@ inputEl.addEventListener('keydown', async e => {
     return;
   }
 
-  // Normal Terminal Handling
   if (e.key === 'Enter') {
     e.preventDefault();
     const raw = inputEl.value;
@@ -584,7 +532,6 @@ inputEl.addEventListener('keydown', async e => {
     const lower    = trimmed.toLowerCase();
     const baseCmd  = lower.split(' ')[0];
     const args     = trimmed.slice(baseCmd.length).trim();
-    
     if (COMMANDS[baseCmd]) {
       await COMMANDS[baseCmd](args);
     } else if (baseCmd === 'echo') {
