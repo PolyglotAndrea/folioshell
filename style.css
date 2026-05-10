@@ -422,99 +422,141 @@ html, body {
   #window { border-radius: 0; width: 100vw; height: 100vh; }
 }
 
+/* ── Layout Panes ── */
+.window-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pane-terminal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.pane-blog {
+  width: 0;
+  overflow: hidden;
+  border-left: 1px solid transparent;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), border 0.4s ease;
+  background: rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-blog.active {
+  width: 550px;
+  border-left: 1px solid var(--win-border);
+}
+
+.dashboard-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-dim);
+  opacity: 0.5;
+  text-align: center;
+  padding: 40px;
+}
+
+.dashboard-placeholder .p-icon { font-size: 3em; margin-bottom: 20px; }
+.dashboard-placeholder .p-text { font-size: 0.85em; letter-spacing: 1px; text-transform: uppercase; }
+
 /* ── Blog Reader (TUI Style) ── */
 .blog-reader {
   display: flex;
   height: 100%;
-  border: 1px solid var(--win-border);
-  border-radius: 12px;
-  background: rgba(0,0,0,0.2);
+  background: transparent;
   overflow: hidden;
-  animation: scale-up 0.3s ease-out;
-}
-
-@keyframes scale-up {
-  from { opacity: 0; transform: scale(0.98); }
-  to   { opacity: 1; transform: scale(1); }
 }
 
 .reader-sidebar {
-  width: 280px;
-  background: rgba(255,255,255,0.03);
+  width: 220px;
+  background: rgba(255,255,255,0.02);
   border-right: 1px solid rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;
   padding: 12px 0;
+  flex-shrink: 0;
 }
 
 .reader-item {
-  padding: 12px 20px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
 }
 
 .reader-item:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.04);
 }
 
 .reader-item.active {
-  background: rgba(187, 154, 247, 0.1);
+  background: rgba(187, 154, 247, 0.08);
   border-left-color: var(--purple);
 }
 
 .reader-item .item-date {
-  font-size: 0.75em;
-  color: var(--fg-dim);
+  font-size: 0.7em;
+  color: var(--fg-subtle);
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .reader-item .item-title {
-  font-size: 0.9em;
-  font-weight: 600;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--fg-dim);
+}
+
+.reader-item.active .item-title {
   color: var(--fg);
 }
 
 .reader-main {
   flex: 1;
-  padding: 30px 40px;
+  padding: 30px 35px;
   overflow-y: auto;
-  line-height: 1.8;
+  line-height: 1.7;
   background: transparent;
 }
 
 .reader-main h1 {
-  font-size: 1.6em;
+  font-size: 1.4em;
   color: var(--purple);
-  margin-bottom: 0.5em;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: 10px;
+  margin-bottom: 0.6em;
+  line-height: 1.3;
 }
 
 .reader-main h2 {
-  font-size: 1.2em;
+  font-size: 1.1em;
   color: var(--blue);
-  margin: 1.5em 0 0.5em;
+  margin: 1.4em 0 0.6em;
 }
 
 .reader-main p {
   margin-bottom: 1em;
-  color: var(--fg);
-  opacity: 0.9;
+  color: var(--fg-dim);
+  font-size: 0.95em;
 }
 
 .reader-main code {
   background: rgba(255,255,255,0.05);
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
   color: var(--cyan);
+  font-size: 0.9em;
 }
 
 .reader-main hr {
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  margin: 20px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 24px 0;
 }
 
 /* ── Selection ── */

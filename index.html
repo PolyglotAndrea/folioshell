@@ -69,38 +69,54 @@
         <div class="titlebar-right">folioshell</div>
       </div>
 
-      <!-- terminal body -->
-      <div id="terminal">
-        <h1 style="display:none;">B. Andrea Horvath - Senior AI Full-Stack Architect</h1>
-        <div id="output">
-          <noscript>
-            <h2>Executive Summary</h2>
-            <p>B. Andrea Horvath is a Senior AI Full-Stack Architect and Founder of Cognix.one with 12+ years of experience in Java, Go, Rust, and Distributed Systems.</p>
-            <p>Specializing in Neural Orchestration, Multi-Agent Systems, and Cognitive Infrastructure.</p>
-            <ul>
-              <li><strong>Skills:</strong> AI/ML, Rust, Go, Java, Distributed Systems, Cloud-Native.</li>
-              <li><strong>Projects:</strong> Cognix, Folioshell, Aspen.</li>
-            </ul>
-          </noscript>
+      <div class="window-content">
+        <!-- left side: terminal -->
+        <div class="pane-terminal">
+          <div id="terminal">
+            <h1 style="display:none;">B. Andrea Horvath - Senior AI Full-Stack Architect</h1>
+            <div id="output">
+              <noscript>
+                <h2>Executive Summary</h2>
+                <p>B. Andrea Horvath is a Senior AI Full-Stack Architect and Founder of Cognix.one with 12+ years of experience in Java, Go, Rust, and Distributed Systems.</p>
+                <p>Specializing in Neural Orchestration, Multi-Agent Systems, and Cognitive Infrastructure.</p>
+                <ul>
+                  <li><strong>Skills:</strong> AI/ML, Rust, Go, Java, Distributed Systems, Cloud-Native.</li>
+                  <li><strong>Projects:</strong> Cognix, Folioshell, Aspen.</li>
+                </ul>
+              </noscript>
+            </div>
+
+            <div id="input-line">
+              <span class="ps1">
+                <span class="ps1-user">andrea</span><span class="ps1-at">@</span><span class="ps1-host">cognix.one</span>
+                <span class="ps1-dir"> ~</span>
+                <span class="ps1-branch"> git:(main)</span>
+                <span class="ps1-arrow"> ❯</span>
+              </span>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  id="cmd-input"
+                  autofocus
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="terminal input"
+                />
+                <span id="cursor-block"></span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div id="input-line">
-          <span class="ps1">
-            <span class="ps1-user">andrea</span><span class="ps1-at">@</span><span class="ps1-host">cognix.one</span>
-            <span class="ps1-dir"> ~</span>
-            <span class="ps1-branch"> git:(main)</span>
-            <span class="ps1-arrow"> ❯</span>
-          </span>
-          <div class="input-wrapper">
-            <input
-              type="text"
-              id="cmd-input"
-              autofocus
-              autocomplete="off"
-              spellcheck="false"
-              aria-label="terminal input"
-            />
-            <span id="cursor-block"></span>
+        <!-- right side: blog dashboard -->
+        <div id="blog-dashboard" class="pane-blog">
+          <div class="dashboard-placeholder">
+            <div class="p-icon">📚</div>
+            <div class="p-text">Type 'blogs' to open the neural archives</div>
+          </div>
+          <div id="dashboard-content" style="display:none; height: 100%;">
+            <div class="reader-sidebar" id="reader-sidebar"></div>
+            <div class="reader-main" id="reader-main"></div>
           </div>
         </div>
       </div>

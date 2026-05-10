@@ -70,7 +70,7 @@ const CONFIG = {
 
 // ── Blogs State & Fetching ──────────────────────────────────────────────────
 let BLOGS = [];
-let isReaderMode = false;
+let isDashboardOpen = false;
 let selectedBlogIdx = 0;
 
 async function fetchBlogManifest() {
@@ -89,16 +89,9 @@ async function fetchBlogPostContent(filename) {
   try {
     const res = await fetch(`blogs/${filename}`);
     if (!res.ok) throw new Error('Post not found');
-    const text = await res.json(); // Wait, it's MD, so .text()
-    return text;
+    return await res.text();
   } catch (err) {
-    // If json fails, try text (it is a .md file)
-    try {
-      const res = await fetch(`blogs/${filename}`);
-      return await res.text();
-    } catch (e) {
-      return '# Error\nCould not load post content.';
-    }
+    return '# Error\nCould not load post content.';
   }
 }
 
@@ -143,6 +136,9 @@ const outputEl = document.getElementById('output');
 const inputEl  = document.getElementById('cmd-input');
 const cursorEl = document.getElementById('cursor-block');
 const terminalEl = document.getElementById('terminal');
+const blogPane = document.getElementById('blog-dashboard');
+const dashContent = document.getElementById('dashboard-content');
+const dashPlaceholder = blogPane.querySelector('.dashboard-placeholder');
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 const esc = s => String(s)
@@ -167,38 +163,38 @@ const line  = (html, cls = '') => {
 };
 
 function scrollBottom() {
-  if (isReaderMode) return;
   requestAnimationFrame(() => {
     terminalEl.scrollTop = terminalEl.scrollHeight;
   });
 }
 
-// ── Reader Logic ────────────────────────────────────────────────────────────
-async function openBlogReader() {
-  line(`<span class="c-dim">Connecting to blog neural core...</span>`);
-  const ok = await fetchBlogManifest();
-  if (!ok || BLOGS.length === 0) {
-    line(`<span class="c-red">Error: Could not retrieve blog manifest.</span>`);
-    return;
+// ── Dashboard Logic ─────────────────────────────────────────────────────────
+async function toggleDashboard(forceOpen = true) {
+  if (forceOpen && !isDashboardOpen) {
+    line(`<span class="c-dim">Connecting to neural archives...</span>`);
+    const ok = await fetchBlogManifest();
+    if (!ok || BLOGS.length === 0) {
+      line(`<span class="c-red">Error: Neural link failed.</span>`);
+      return;
+    }
+    
+    isDashboardOpen = true;
+    blogPane.classList.add('active');
+    dashPlaceholder.style.display = 'none';
+    dashContent.style.display = 'flex';
+    
+    renderBlogList();
+    await renderBlogPost();
+    line(`<span class="c-green">Dashboard initialized.</span>`);
+  } else if (!forceOpen && isDashboardOpen) {
+    isDashboardOpen = false;
+    blogPane.classList.remove('active');
+    setTimeout(() => {
+      dashContent.style.display = 'none';
+      dashPlaceholder.style.display = 'flex';
+    }, 400);
+    line(`<span class="c-dim">Dashboard minimized.</span>`);
   }
-
-  isReaderMode = true;
-  selectedBlogIdx = 0;
-  
-  const reader = document.createElement('div');
-  reader.id = 'blog-reader-ui';
-  reader.className = 'blog-reader';
-  reader.innerHTML = `
-    <div class="reader-sidebar" id="reader-sidebar"></div>
-    <div class="reader-main" id="reader-main"></div>
-  `;
-  
-  outputEl.appendChild(reader);
-  renderBlogList();
-  await renderBlogPost();
-  
-  document.getElementById('input-line').style.display = 'none';
-  scrollBottom();
 }
 
 function renderBlogList() {
@@ -226,7 +222,8 @@ function renderBlogList() {
   footer.style.marginTop = 'auto';
   footer.style.fontSize = '10px';
   footer.style.color = 'var(--fg-subtle)';
-  footer.innerHTML = '↑/↓: Nav  •  Enter: Read  •  ESC/Q: Exit';
+  footer.style.opacity = '0.5';
+  footer.innerHTML = 'CTRL+UP/DOWN: Nav Blogs<br/>Type "exit" to close';
   sidebar.appendChild(footer);
 }
 
@@ -235,7 +232,7 @@ async function renderBlogPost() {
   if (!viewer) return;
   
   const blog = BLOGS[selectedBlogIdx];
-  viewer.innerHTML = `<span class="c-dim">Loading content from ${esc(blog.file)}...</span>`;
+  viewer.innerHTML = `<span class="c-dim">Synchronizing data from ${esc(blog.file)}...</span>`;
   
   const content = await fetchBlogPostContent(blog.file);
   const lines = content.split('\n');
@@ -258,45 +255,6 @@ async function renderBlogPost() {
   viewer.scrollTop = 0;
 }
 
-function closeBlogReader() {
-  isReaderMode = false;
-  const reader = document.getElementById('blog-reader-ui');
-  if (reader) reader.remove();
-  document.getElementById('input-line').style.display = 'flex';
-  inputEl.focus();
-  line(`<span class="c-dim">Neural core detached.</span>`);
-}
-
-// ── Typing Effect ──────────────────────────────────────────────────────────
-async function typeLine(html, cls = '', speed = 2) {
-  const l = line('', cls);
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  const text = tempDiv.innerText;
-  if (html.includes('<')) {
-    l.innerHTML = html;
-  } else {
-    for (let i = 0; i < text.length; i++) {
-      l.innerText += text[i];
-      scrollBottom();
-      await new Promise(r => setTimeout(r, speed));
-    }
-  }
-  scrollBottom();
-}
-
-// ── Prompt HTML ────────────────────────────────────────────────────────────
-function promptHTML(cmd) {
-  return `<span class="ps1-echo">` +
-    `<span class="e-user">${CONFIG.user}</span>` +
-    `<span class="e-at">@</span>` +
-    `<span class="e-host">${CONFIG.host}</span> ` +
-    `<span class="e-dir">~</span>` +
-    `<span class="e-branch"> git:(main)</span>` +
-    `<span class="e-arrow"> ❯</span>` +
-    `</span> <span class="e-cmd">${esc(cmd)}</span>`;
-}
-
 // ── Commands ───────────────────────────────────────────────────────────────
 const COMMANDS = {};
 
@@ -307,7 +265,7 @@ COMMANDS.help = async function() {
   const rows = [
     ['me',          'full profile & executive summary'],
     ['whoami',      'detailed technical deep-dive'],
-    ['blogs',       'interactive article reader'],
+    ['blogs',       'open the side-by-side blog dashboard'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
     ['projects',    'key projects (dynamic)'],
@@ -317,12 +275,25 @@ COMMANDS.help = async function() {
     ['banner',      'show ASCII banner'],
     ['date',        'current date & time'],
     ['clear',       'clear screen'],
+    ['exit',        'close the blog dashboard'],
     ['help',        'show this help'],
   ];
   for (const [cmd, desc] of rows) {
     line(`<span class="help-row"><span class="help-cmd">${cmd}</span><span class="help-desc">${desc}</span></span>`);
   }
   blank();
+};
+
+COMMANDS.blogs = function() {
+  toggleDashboard(true);
+};
+
+COMMANDS.exit = function() {
+  if (isDashboardOpen) {
+    toggleDashboard(false);
+  } else {
+    line(`<span class="c-dim">Terminal session remains active.</span>`);
+  }
 };
 
 COMMANDS.me = async function() {
@@ -360,10 +331,6 @@ COMMANDS.whoami = async function() {
   blank();
   line(`<span class="c-dim" style="font-size: 0.85em; opacity: 0.6;">(Information distilled from https://github.com/PolyglotAndrea)</span>`);
   blank();
-};
-
-COMMANDS.blogs = function(args) {
-  openBlogReader();
 };
 
 COMMANDS.interests = function() {
@@ -491,32 +458,57 @@ COMMANDS.date = function() {
   line(`<span class="c-yellow">${new Date().toLocaleString('en-US', { timeZoneName: 'short', hour12: false })}</span>`);
 };
 
+// ── Typing Effect ──────────────────────────────────────────────────────────
+async function typeLine(html, cls = '', speed = 2) {
+  const l = line('', cls);
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const text = tempDiv.innerText;
+  if (html.includes('<')) {
+    l.innerHTML = html;
+  } else {
+    for (let i = 0; i < text.length; i++) {
+      l.innerText += text[i];
+      scrollBottom();
+      await new Promise(r => setTimeout(r, speed));
+    }
+  }
+  scrollBottom();
+}
+
+// ── Prompt HTML ────────────────────────────────────────────────────────────
+function promptHTML(cmd) {
+  return `<span class="ps1-echo">` +
+    `<span class="ps1-user">${CONFIG.user}</span>` +
+    `<span class="ps1-at">@</span>` +
+    `<span class="ps1-host">${CONFIG.host}</span> ` +
+    `<span class="ps1-dir">~</span>` +
+    `<span class="ps1-branch"> git:(main)</span>` +
+    `<span class="ps1-arrow"> ❯</span>` +
+    `</span> <span class="e-cmd">${esc(cmd)}</span>`;
+}
+
 // ── Input handling ─────────────────────────────────────────────────────────
 const history = [];
 let histIdx = -1;
 
 inputEl.addEventListener('keydown', async e => {
-  if (isReaderMode) {
-    if (e.key === 'ArrowUp') {
+  // If Dashboard is open, allow special navigation
+  if (isDashboardOpen) {
+    if (e.ctrlKey && e.key === 'ArrowUp') {
       e.preventDefault();
       selectedBlogIdx = (selectedBlogIdx - 1 + BLOGS.length) % BLOGS.length;
       renderBlogList();
       await renderBlogPost();
+      return;
     }
-    if (e.key === 'ArrowDown') {
+    if (e.ctrlKey && e.key === 'ArrowDown') {
       e.preventDefault();
       selectedBlogIdx = (selectedBlogIdx + 1) % BLOGS.length;
       renderBlogList();
       await renderBlogPost();
+      return;
     }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-    }
-    if (e.key === 'Escape' || e.key.toLowerCase() === 'q') {
-      e.preventDefault();
-      closeBlogReader();
-    }
-    return;
   }
 
   if (e.key === 'Enter') {
@@ -548,7 +540,7 @@ inputEl.addEventListener('keydown', async e => {
       if (CAT_MAP[file]) {
         await CAT_MAP[file]();
       } else if (file.startsWith('blogs/')) {
-        COMMANDS.blogs(file);
+        toggleDashboard(true);
       } else {
         line(`<span class="c-red">cat: ${esc(args)}: No such file</span>`);
       }
@@ -599,7 +591,7 @@ function updateCursor() {
 inputEl.addEventListener('input', updateCursor);
 window.addEventListener('resize', updateCursor);
 document.addEventListener('click', () => {
-  if (!isReaderMode) inputEl.focus();
+  inputEl.focus();
 });
 
 async function boot() {
