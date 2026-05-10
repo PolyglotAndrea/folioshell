@@ -68,8 +68,76 @@ const CONFIG = {
   ],
 };
 
-// ── Blogs (Mocked Folder Structure) ────────────────────────────────────────
+// ── Blogs (Dynamic Folder Structure) ──────────────────────────────────────
 const BLOGS = [
+  {
+    id: 'ai-programming-paradigm-shift',
+    title: 'The Paradigm Shift in AI Programming',
+    date: '2024-05-10',
+    tags: ['AI', 'Claude Code', 'Trellis', 'Graphify'],
+    content: [
+      '# The Paradigm Shift in AI Programming',
+      '## From First Principles to Graph-Based Workflows',
+      '',
+      'Software engineering is undergoing a transformation unlike anything before.',
+      'As Boris Cherny, the lead behind Claude Code, has argued, code generation',
+      'is increasingly becoming a solved problem.',
+      '',
+      'Over the next one or two years, the traditional title of "software engineer"',
+      'may gradually fade, replaced by a more versatile role: the Builder.',
+      '',
+      '---',
+      '',
+      'I. Understanding Large Models: "The Bitter Lesson"',
+      '------------------------------------------------',
+      'Traditional systems relied on manually written if-else rules. Real-world',
+      'complexity proved too high for handcrafted logic.',
+      '',
+      'The real breakthrough arrived in 2017 with the Transformer architecture.',
+      'One principle has repeatedly proven true: The Bitter Lesson. General-purpose',
+      'models consistently outperform systems over-engineered for narrow tasks.',
+      '',
+      'II. Capability Limits and Harness Engineering',
+      '-------------------------------------------',
+      'A large language model performs a deceptively simple task: Predict the next token.',
+      '',
+      'To address context limitations and O(n^2) complexity, we now use "Harness Engineering":',
+      '1. Architectural Constraints: Externalized rules into CI/linters.',
+      '2. Execution Loops: Task decomposition, tool invocation, and feedback.',
+      '3. Memory Governance: Persistent long-term documentation and specs.',
+      '',
+      'III. Claude Code in Practice: Iterative Agentic Workflows',
+      '-------------------------------------------------------',
+      'Collect context -> Take action -> Verify results.',
+      '',
+      '1. Enable Plan Mode: Reduce context pollution via read-only exploration.',
+      '2. Use Subagents Aggressively: Isolate context windows for focused tasks.',
+      '3. Configure Skills and Hooks: On-demand workflows and deterministic logic.',
+      '',
+      'IV. The Evolution of Ultimate Workflows: Trellis and Graphify',
+      '------------------------------------------------------------',
+      '',
+      '1. Trellis: An External Memory Brain for AI',
+      '   Addressing session amnesia via three layers: Spec Layer, Task Layer,',
+      '   and Workspace Layer (Persistent memory).',
+      '',
+      '2. Graphify: From Codebases to Knowledge Graphs',
+      '   Inspired by Karpathy, Graphify compiles entire projects into knowledge graphs',
+      '   for precise navigation and multimodal understanding.',
+      '',
+      'Conclusion: Advice for Future Builders',
+      '---------------------------------------',
+      '1. Use the strongest models available (Opus-class).',
+      '2. Evolve into a Cross-Disciplinary Generalist.',
+      '3. Build and Preserve Your Own Spec Assets.',
+      '',
+      'In the age of AI-native software development, your Specs become your',
+      'institutional memory—and your real intellectual property.',
+      '',
+      '---',
+      'Full article available at: https://github.com/PolyglotAndrea'
+    ]
+  },
   {
     id: 'neural-orchestration',
     title: 'The Era of Neural Orchestration',
@@ -78,37 +146,10 @@ const BLOGS = [
     content: [
       '# The Era of Neural Orchestration',
       '',
-      'As we move beyond simple LLM calls, the need for a "Cognitive OS" becomes clear.',
       'Neural orchestration is the layer that manages multi-agent handoffs,',
       'long-term memory retrieval, and tool execution in a deterministic way.',
       '',
       'In this post, I explore how we build these systems using Go and Rust...'
-    ]
-  },
-  {
-    id: 'distributed-rust',
-    title: 'High-Performance Distributed Systems in Rust',
-    date: '2024-04-15',
-    tags: ['Rust', 'Distributed Systems'],
-    content: [
-      '# High-Performance Distributed Systems in Rust',
-      '',
-      'Rust provides the safety and performance required for the next generation',
-      'of cloud-native infrastructure. From zero-cost abstractions to fearless',
-      'concurrency, it is the perfect tool for building data planes...'
-    ]
-  },
-  {
-    id: 'the-future-of-aui',
-    title: 'AUI: The Future of User Interfaces',
-    date: '2024-03-10',
-    tags: ['Design', 'AI'],
-    content: [
-      '# AUI: The Future of User Interfaces',
-      '',
-      'Traditional UI is dying. AI User Interfaces (AUI) are not just chat boxes;',
-      'they are dynamic, context-aware environments that adapt to the user\'s intent',
-      'in real-time...'
     ]
   }
 ];
@@ -281,7 +322,8 @@ COMMANDS.whoami = async function() {
 COMMANDS.blogs = function(args) {
   blank();
   if (args) {
-    const post = BLOGS.find(b => b.id === args || `blogs/${b.id}.md` === args);
+    const id = args.replace('blogs/', '').replace('.md', '');
+    const post = BLOGS.find(b => b.id === id);
     if (post) {
       line(`<span class="c-cyan bold">${post.title}</span> <span class="c-dim">[${post.date}]</span>`);
       line(`<span class="divider"></span>`);
@@ -448,7 +490,6 @@ inputEl.addEventListener('keydown', async e => {
     const lower    = trimmed.toLowerCase();
     const baseCmd  = lower.split(' ')[0];
     const args     = trimmed.slice(baseCmd.length).trim();
-    
     if (COMMANDS[baseCmd]) {
       await COMMANDS[baseCmd](args);
     } else if (baseCmd === 'echo') {
