@@ -111,7 +111,7 @@ async function fetchGitHubRepos() {
         const scoreA = (a.stargazers_count * 5) + (a.forks_count * 2);
         const scoreB = (b.stargazers_count * 5) + (b.forks_count * 2);
         if (scoreA !== scoreB) return scoreB - scoreA;
-        return new Date(b.updated_at) - new Date(a.updated_at);
+        return new Date(r.updated_at) - new Date(a.updated_at);
       })
       .slice(0, 5)
       .map(r => ({
@@ -135,7 +135,7 @@ async function fetchGitHubRepos() {
 const outputEl = document.getElementById('output');
 const inputEl  = document.getElementById('cmd-input');
 const cursorEl = document.getElementById('cursor-block');
-const terminalEl = document.querySelector('.pane-terminal');
+const terminalPane = document.querySelector('.pane-terminal');
 const blogPane = document.getElementById('blog-dashboard');
 const dashContent = document.getElementById('dashboard-content');
 const dashPlaceholder = blogPane.querySelector('.dashboard-placeholder');
@@ -164,7 +164,7 @@ const line  = (html, cls = '') => {
 
 function scrollBottom() {
   requestAnimationFrame(() => {
-    terminalEl.scrollTop = terminalEl.scrollHeight;
+    terminalPane.scrollTop = terminalPane.scrollHeight;
   });
 }
 
@@ -260,7 +260,7 @@ async function renderBlogPost() {
 }
 
 // ── Theme Management ───────────────────────────────────────────────────────
-const THEMES = ['tokyo', 'cyber', 'oceanic'];
+const THEMES = ['tokyo', 'cyber', 'oceanic', 'light'];
 let currentTheme = localStorage.getItem('cognix-theme') || 'tokyo';
 
 function setTheme(name) {
@@ -282,7 +282,7 @@ COMMANDS.help = async function() {
     ['me',          'full profile & executive summary'],
     ['whoami',      'detailed technical deep-dive'],
     ['blogs',       'open the side-by-side blog dashboard'],
-    ['theme <name>', 'switch theme: tokyo, cyber, oceanic'],
+    ['theme <name>', 'switch theme: tokyo, cyber, oceanic, light'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
     ['projects',    'key projects (dynamic)'],
@@ -568,12 +568,55 @@ document.addEventListener('click', () => {
   inputEl.focus();
 });
 
+// ── Boot Sequence ──────────────────────────────────────────────────────────
 async function boot() {
   setTheme(currentTheme);
-  await COMMANDS.banner();
+  
+  // Rich Welcome Sequence
+  const welcomeText = [
+    { l: 'INITIALIZING COGNIX OS v2.4.0...', c: 'c-purple bold' },
+    { l: '▸ Checksums verified: OK', c: 'c-dim' },
+    { l: '▸ Neural bridge established.', c: 'c-dim' },
+    { l: '▸ Secure shell connected.', c: 'c-dim' },
+    { l: '', c: '' },
+  ];
+  
+  for (const item of welcomeText) {
+    if (item.l === '') blank();
+    else line(`<span class="${item.c}">${item.l}</span>`);
+    await new Promise(r => setTimeout(r, 40));
+  }
+  
+  // ASCII Banner
+  const ascii = [
+    '   ______ ____  ______ _   _ _____ _  __',
+    '  / ____/ __ \\| ____| \\ | |_   _\\ \\/ /',
+    ' | |   | |  | | |__ |  \\| | | |  \\  / ',
+    ' | |   | |  | |  __|| . ` | | |  /  \\ ',
+    ' | |___| |__| | |___| |\\  |_| |_/  /\\ \\',
+    '  \\_____\\____/|_____|_| \\_|_____/_/  \\_\\',
+  ];
+  for (const l of ascii) {
+    line(`<span class="c-purple" style="font-weight:bold; font-size:1.1em; letter-spacing: 1px;">${esc(l)}</span>`);
+    await new Promise(r => setTimeout(r, 10));
+  }
+  blank();
+  
+  // Executive Summary Card
+  await typeLine(`<span class="c-blue bold">B. Andrea Horvath</span> · Senior AI Architect`);
+  await typeLine(`<span class="c-dim">Specializing in bridging Distributed Systems & Neural Orchestration.</span>`);
+  blank();
+  
+  // Quick Help
+  line(`<span class="section-head">// quick start</span>`);
+  line(`<span class="c-dim">  Type </span><span class="c-cyan bold">me</span><span class="c-dim">      - Profile Summary</span>`);
+  line(`<span class="c-dim">  Type </span><span class="c-cyan bold">blogs</span><span class="c-dim">   - Open Side-by-Side Dashboard</span>`);
+  line(`<span class="c-dim">  Type </span><span class="c-cyan bold">theme</span><span class="c-dim">   - Switch Visual Mode (tokyo, light...)</span>`);
+  line(`<span class="c-dim">  Type </span><span class="c-cyan bold">help</span><span class="c-dim">    - Full Command List</span>`);
+  blank();
+  
   updateCursor();
 }
 
 boot();
-// Make toggleDashboard global for the close button
 window.toggleDashboard = toggleDashboard;
