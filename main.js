@@ -27,13 +27,13 @@ const CONFIG = {
     { icon: '🎨', text: 'AI User Interface (AUI) Design' },
   ],
   skills: [
-    { name: 'AI / ML',       pct: 92, color: '#bb9af7' },
-    { name: 'Go',            pct: 98, color: '#7dcfff' },
-    { name: 'Rust',          pct: 95, color: '#ff9e64' },
-    { name: 'Java / Spring', pct: 98, color: '#e0af68' },
-    { name: 'Distributed Sys', pct: 96, color: '#7aa2f7' },
-    { name: 'Cloud/DevOps',  pct: 85, color: '#9ece6a' },
-    { name: 'TypeScript',    pct: 88, color: '#7aa2f7' },
+    { name: 'AI / ML',       pct: 92, color: 'var(--purple)' },
+    { name: 'Go',            pct: 98, color: 'var(--blue)' },
+    { name: 'Rust',          pct: 95, color: 'var(--peach)' },
+    { name: 'Java / Spring', pct: 98, color: 'var(--yellow)' },
+    { name: 'Distributed Sys', pct: 96, color: 'var(--cyan)' },
+    { name: 'Cloud/DevOps',  pct: 85, color: 'var(--green)' },
+    { name: 'TypeScript',    pct: 88, color: 'var(--blue)' },
   ],
   projects: [
     {
@@ -135,7 +135,7 @@ async function fetchGitHubRepos() {
 const outputEl = document.getElementById('output');
 const inputEl  = document.getElementById('cmd-input');
 const cursorEl = document.getElementById('cursor-block');
-const terminalEl = document.getElementById('terminal');
+const terminalEl = document.querySelector('.pane-terminal');
 const blogPane = document.getElementById('blog-dashboard');
 const dashContent = document.getElementById('dashboard-content');
 const dashPlaceholder = blogPane.querySelector('.dashboard-placeholder');
@@ -190,8 +190,10 @@ async function toggleDashboard(forceOpen = true) {
     isDashboardOpen = false;
     blogPane.classList.remove('active');
     setTimeout(() => {
-      dashContent.style.display = 'none';
-      dashPlaceholder.style.display = 'flex';
+      if (!isDashboardOpen) {
+        dashContent.style.display = 'none';
+        dashPlaceholder.style.display = 'flex';
+      }
     }, 400);
     line(`<span class="c-dim">Dashboard minimized.</span>`);
   }
@@ -220,10 +222,12 @@ function renderBlogList() {
   const footer = document.createElement('div');
   footer.style.padding = '20px';
   footer.style.marginTop = 'auto';
-  footer.style.fontSize = '10px';
+  footer.style.fontSize = '9px';
   footer.style.color = 'var(--fg-subtle)';
-  footer.style.opacity = '0.5';
-  footer.innerHTML = 'CTRL+UP/DOWN: Nav Blogs<br/>Type "exit" to close';
+  footer.style.opacity = '0.4';
+  footer.style.textTransform = 'uppercase';
+  footer.style.letterSpacing = '1px';
+  footer.innerHTML = 'CTRL+UP/DOWN: NAV ARCHIVES';
   sidebar.appendChild(footer);
 }
 
@@ -255,6 +259,18 @@ async function renderBlogPost() {
   viewer.scrollTop = 0;
 }
 
+// ── Theme Management ───────────────────────────────────────────────────────
+const THEMES = ['tokyo', 'cyber', 'oceanic'];
+let currentTheme = localStorage.getItem('cognix-theme') || 'tokyo';
+
+function setTheme(name) {
+  if (!THEMES.includes(name)) return false;
+  document.body.className = `theme-${name}`;
+  currentTheme = name;
+  localStorage.setItem('cognix-theme', name);
+  return true;
+}
+
 // ── Commands ───────────────────────────────────────────────────────────────
 const COMMANDS = {};
 
@@ -266,10 +282,10 @@ COMMANDS.help = async function() {
     ['me',          'full profile & executive summary'],
     ['whoami',      'detailed technical deep-dive'],
     ['blogs',       'open the side-by-side blog dashboard'],
+    ['theme <name>', 'switch theme: tokyo, cyber, oceanic'],
     ['interests',   'technical interests'],
     ['skills',      'skill matrix & proficiency'],
     ['projects',    'key projects (dynamic)'],
-    ['contact',     'links & contact info'],
     ['ls',          'list all "files"'],
     ['cat <file>',  'read a file'],
     ['banner',      'show ASCII banner'],
@@ -282,6 +298,20 @@ COMMANDS.help = async function() {
     line(`<span class="help-row"><span class="help-cmd">${cmd}</span><span class="help-desc">${desc}</span></span>`);
   }
   blank();
+};
+
+COMMANDS.theme = function(args) {
+  const name = args.trim().toLowerCase();
+  if (!name) {
+    line(`<span class="c-dim">Current theme: </span><span class="c-purple bold">${currentTheme}</span>`);
+    line(`<span class="c-dim">Available: </span><span class="c-cyan">${THEMES.join(', ')}</span>`);
+    return;
+  }
+  if (setTheme(name)) {
+    line(`<span class="c-green">Theme switched to </span><span class="c-green bold">${name}</span>`);
+  } else {
+    line(`<span class="c-red">Error: Theme "${name}" not found.</span>`);
+  }
 };
 
 COMMANDS.blogs = function() {
@@ -348,7 +378,7 @@ COMMANDS.skills = function() {
   line(`<span class="section-head">// skills</span>`);
   blank();
   CONFIG.skills.forEach(({ name, pct, color }) => {
-    const fillStyle = `width:${pct}%; background:${color}; box-shadow: 0 0 10px ${color}40;`;
+    const fillStyle = `width:${pct}%; background:${color}; box-shadow: 0 0 10px ${color === 'var(--purple)' ? 'rgba(187, 154, 247, 0.3)' : 'rgba(0,0,0,0.1)'};`;
     const html =
       `<div class="skill-row">` +
         `<span class="skill-name">${esc(name)}</span>` +
@@ -386,61 +416,6 @@ COMMANDS.projects = async function() {
       `</div>`;
     line(html);
   });
-  blank();
-};
-
-COMMANDS.contact = function() {
-  blank();
-  line(`<span class="section-head">// contact</span>`);
-  blank();
-  CONFIG.links.forEach(({ icon, label, url, color }) => {
-    line(`  ${icon}  <span class="${color} bold">${label}</span> <span class="c-dim">→</span> <a href="${url}" target="_blank" style="color:var(--fg-dim); text-decoration:none;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-dim)'">${url}</a>`);
-  });
-  blank();
-};
-
-COMMANDS.clear = function() {
-  outputEl.innerHTML = '';
-};
-
-COMMANDS.banner = async function() {
-  blank();
-  const ascii = [
-    '   ______ ____  ______ _   _ _____ _  __',
-    '  / ____/ __ \\| ____| \\ | |_   _\\ \\/ /',
-    ' | |   | |  | | |__ |  \\| | | |  \\  / ',
-    ' | |   | |  | |  __|| . ` | | |  /  \\ ',
-    ' | |___| |__| | |___| |\\  |_| |_/  /\\ \\',
-    '  \\_____\\____/|_____|_| \\_|_____/_/  \\_\\',
-    '        COGNITIVE INTERFACE v2.0'
-  ];
-  for (const l of ascii) {
-    line(`<span class="c-purple" style="font-weight:bold; font-size:1.1em; letter-spacing: 1px;">${esc(l)}</span>`);
-    await new Promise(r => setTimeout(r, 10));
-  }
-  blank();
-  const bootLines = [
-    { l: '▸ Initializing cognitive kernels...', c: 'c-dim' },
-    { l: '▸ Loading neural orchestration modules...', c: 'c-dim' },
-    { l: '▸ Connecting to high-performance data planes...', c: 'c-dim' },
-    { l: '▸ SUCCESS: Cognix OS interface ready.', c: 'c-green' }
-  ];
-  for (const bl of bootLines) {
-    line(`<span class="${bl.c}">${bl.l}</span>`);
-    await new Promise(r => setTimeout(r, 80));
-  }
-  blank();
-  const sysInfo = [
-    { label: 'KERNEL', val: 'Linux 6.8.0-cognix-ai-x86_64' },
-    { label: 'UPTIME', val: '12 years, 4 months' },
-    { label: 'SHELL',  val: 'folioshell v2.0' },
-    { label: 'USER',   val: 'andrea@cognix.one' }
-  ];
-  sysInfo.forEach(info => {
-    line(`<span class="c-blue bold">${info.label.padEnd(10)}</span> <span class="c-dim">▸</span> <span class="c-cyan">${info.val}</span>`);
-  });
-  blank();
-  line(`<span class="c-dim">Type </span><span class="c-green bold">help</span><span class="c-dim"> to explore your cognitive workspace.</span>`);
   blank();
 };
 
@@ -493,7 +468,6 @@ const history = [];
 let histIdx = -1;
 
 inputEl.addEventListener('keydown', async e => {
-  // If Dashboard is open, allow special navigation
   if (isDashboardOpen) {
     if (e.ctrlKey && e.key === 'ArrowUp') {
       e.preventDefault();
@@ -595,8 +569,11 @@ document.addEventListener('click', () => {
 });
 
 async function boot() {
+  setTheme(currentTheme);
   await COMMANDS.banner();
   updateCursor();
 }
 
 boot();
+// Make toggleDashboard global for the close button
+window.toggleDashboard = toggleDashboard;
