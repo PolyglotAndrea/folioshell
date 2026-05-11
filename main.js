@@ -111,7 +111,7 @@ async function fetchGitHubRepos() {
         const scoreA = (a.stargazers_count * 5) + (a.forks_count * 2);
         const scoreB = (b.stargazers_count * 5) + (b.forks_count * 2);
         if (scoreA !== scoreB) return scoreB - scoreA;
-        return new Date(r.updated_at) - new Date(a.updated_at);
+        return new Date(b.updated_at) - new Date(a.updated_at);
       })
       .slice(0, 5)
       .map(r => ({
@@ -231,6 +231,57 @@ function renderBlogList() {
   sidebar.appendChild(footer);
 }
 
+// Simple Premium Markdown Parser
+function parseMarkdown(md) {
+  const lines = md.split('\n');
+  let html = '';
+  let inList = false;
+  
+  for (let l of lines) {
+    const trimmed = l.trim();
+    
+    // List Handling
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${parseInline(trimmed.slice(2))}</li>`;
+      continue;
+    } else if (inList && trimmed === '') {
+      html += '</ul>'; inList = false;
+      continue;
+    } else if (inList && !trimmed.startsWith('- ') && !trimmed.startsWith('* ')) {
+      html += '</ul>'; inList = false;
+    }
+
+    // Headers
+    if (trimmed.startsWith('# ')) { html += `<h1>${parseInline(trimmed.slice(2))}</h1>`; continue; }
+    if (trimmed.startsWith('## ')) { html += `<h2>${parseInline(trimmed.slice(3))}</h2>`; continue; }
+    if (trimmed.startsWith('### ')) { html += `<h3>${parseInline(trimmed.slice(4))}</h3>`; continue; }
+    
+    // Blockquotes
+    if (trimmed.startsWith('> ')) {
+      html += `<blockquote><p>${parseInline(trimmed.slice(2))}</p></blockquote>`;
+      continue;
+    }
+    
+    // HR
+    if (trimmed === '---' || trimmed === '***') { html += `<hr/>`; continue; }
+    
+    // Paragraphs
+    if (trimmed === '') { html += `<br/>`; continue; }
+    html += `<p>${parseInline(trimmed)}</p>`;
+  }
+  
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function parseInline(text) {
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+}
+
 async function renderBlogPost() {
   const viewer = document.getElementById('reader-main');
   if (!viewer) return;
@@ -239,23 +290,7 @@ async function renderBlogPost() {
   viewer.innerHTML = `<span class="c-dim">Synchronizing data from ${esc(blog.file)}...</span>`;
   
   const content = await fetchBlogPostContent(blog.file);
-  const lines = content.split('\n');
-  
-  const html = lines.map(l => {
-    if (l.startsWith('# ')) return `<h1>${l.slice(2)}</h1>`;
-    if (l.startsWith('## ')) return `<h2>${l.slice(3)}</h2>`;
-    if (l.startsWith('### ')) return `<h3>${l.slice(4)}</h3>`;
-    if (l.startsWith('---')) return `<hr/>`;
-    if (l.trim() === '') return `<br/>`;
-    
-    let line = esc(l)
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code>$1</code>');
-      
-    return `<p>${line}</p>`;
-  }).join('');
-  
-  viewer.innerHTML = html;
+  viewer.innerHTML = parseMarkdown(content);
   viewer.scrollTop = 0;
 }
 
@@ -572,7 +607,6 @@ document.addEventListener('click', () => {
 async function boot() {
   setTheme(currentTheme);
   
-  // Rich Welcome Sequence
   const welcomeText = [
     { l: 'INITIALIZING COGNIX OS v2.4.0...', c: 'c-purple bold' },
     { l: '▸ Checksums verified: OK', c: 'c-dim' },
@@ -587,7 +621,6 @@ async function boot() {
     await new Promise(r => setTimeout(r, 40));
   }
   
-  // ASCII Banner
   const ascii = [
     '   ______ ____  ______ _   _ _____ _  __',
     '  / ____/ __ \\| ____| \\ | |_   _\\ \\/ /',
@@ -602,12 +635,10 @@ async function boot() {
   }
   blank();
   
-  // Executive Summary Card
   await typeLine(`<span class="c-blue bold">B. Andrea Horvath</span> · Senior AI Architect`);
   await typeLine(`<span class="c-dim">Specializing in bridging Distributed Systems & Neural Orchestration.</span>`);
   blank();
   
-  // Quick Help
   line(`<span class="section-head">// quick start</span>`);
   line(`<span class="c-dim">  Type </span><span class="c-cyan bold">me</span><span class="c-dim">      - Profile Summary</span>`);
   line(`<span class="c-dim">  Type </span><span class="c-cyan bold">blogs</span><span class="c-dim">   - Open Side-by-Side Dashboard</span>`);
